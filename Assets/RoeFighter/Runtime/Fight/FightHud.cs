@@ -4,21 +4,27 @@ using UnityEngine.UI;
 namespace RoeFighter.Fight
 {
     /// <summary>
-    /// Health bars, timer, round marks, special gauges and the big messages, built in code with
-    /// uGUI.  Screen-space overlay in play mode; when the editor films a match the canvas is drawn
-    /// by the fight camera (screen-space camera), so it ends up in the pictures.  On the select screen
-    /// (FightGame.Phase.Select) a card per fighter of the roster instead, the two picked standing on the stage.
+    /// Health bars, timer, the teams (a face per member under each bar, the beaten ones darkened) or the
+    /// round marks of a single match, the power gauge with its stocks, and the big messages, built in
+    /// code with uGUI.  Screen-space overlay in play mode; when the editor films a match the canvas is
+    /// drawn by the fight camera (screen-space camera), so it ends up in the pictures.  On the select
+    /// screen (FightGame.Phase.Select) a card per fighter of the roster instead, each side's team listed
+    /// in order, the two highlighted standing on the stage.
     /// </summary>
     public class FightHud : MonoBehaviour
     {
         public bool drawnByCamera;
         public bool showHelp = true;
 
+        const int MaxTeam = 5, MaxStocks = 3;
+
         Canvas canvas;
         RectTransform[] hpFill = new RectTransform[2], hpLag = new RectTransform[2], meterFill = new RectTransform[2];
         Image[] meterImage = new Image[2];
         Text[] names = new Text[2], meterText = new Text[2];
         Image[,] roundMarks = new Image[2, 3];
+        Image[,] teamFrame = new Image[2, MaxTeam], teamShade = new Image[2, MaxTeam], stockBox = new Image[2, MaxStocks];
+        RawImage[,] teamFace = new RawImage[2, MaxTeam];
         Text timer, message, help, notice;
         float[] lag = { 1f, 1f };
         Font font;
@@ -29,7 +35,7 @@ namespace RoeFighter.Fight
         Image[] cardFrame;
         Text[] cardTag;
         Text selectTitle, selectWho, selectHelp;
-        readonly Text[] pickName = new Text[2], pickOutfit = new Text[2];
+        readonly Text[] pickName = new Text[2], pickOutfit = new Text[2], teamList = new Text[2];
 
         static readonly Color Gold = new Color(1f, 0.82f, 0.25f);
         static readonly Color HpColor = new Color(1f, 0.78f, 0.2f);
@@ -79,28 +85,52 @@ namespace RoeFighter.Fight
                 hpFill[i] = Box("fill", HpColor, Vector2.zero, Vector2.one, frame).rectTransform;
                 Inset(hpLag[i]);
                 Inset(hpFill[i]);
-                names[i] = Label($"name{i}", game.rigs[i].displayName, 34, left ? TextAnchor.LowerLeft : TextAnchor.LowerRight,
+                names[i] = Label($"name{i}", game.rigs[i] != null ? game.rigs[i].displayName : "", 34, left ? TextAnchor.LowerLeft : TextAnchor.LowerRight,
                                  left ? new Vector2(0.03f, 0.948f) : new Vector2(0.555f, 0.948f),
                                  left ? new Vector2(0.445f, 0.995f) : new Vector2(0.97f, 0.995f));
+                // a single match: its round marks
                 for (int r = 0; r < 3; r++)
                 {
                     float x0 = left ? 0.405f - r * 0.02f : 0.58f + r * 0.02f;
                     roundMarks[i, r] = Box($"round{i}{r}", Dark, new Vector2(x0, 0.875f), new Vector2(x0 + 0.014f, 0.897f));
                 }
-                // special gauge
+                // a team battle: a face per member, in fighting order from the outside in
+                for (int k = 0; k < MaxTeam; k++)
+                {
+                    float x0 = left ? 0.03f + k * 0.052f : 0.97f - (k + 1) * 0.052f + 0.006f;
+                    var slot = Box($"team{i}{k}", Dark, new Vector2(x0, 0.835f), new Vector2(x0 + 0.046f, 0.9f));
+                    teamFrame[i, k] = slot;
+                    var inner = Box("inner", new Color(0.12f, 0.12f, 0.15f, 1f), Vector2.zero, Vector2.one, slot);
+                    Inset(inner.rectTransform, 3f);
+                    var go = new GameObject("face", typeof(RectTransform), typeof(RawImage));
+                    go.transform.SetParent(inner.transform, false);
+                    var rt = (RectTransform)go.transform;
+                    rt.anchorMin = Vector2.zero;
+                    rt.anchorMax = Vector2.one;
+                    rt.offsetMin = rt.offsetMax = Vector2.zero;
+                    teamFace[i, k] = go.GetComponent<RawImage>();
+                    teamFace[i, k].raycastTarget = false;
+                    teamShade[i, k] = Box("shade", new Color(0f, 0f, 0f, 0.7f), Vector2.zero, Vector2.one, inner);
+                }
+                // power gauge: the stock being filled as a bar, the stocks held as marks over it
                 var gauge = Box($"meter{i}", Dark, left ? new Vector2(0.03f, 0.045f) : new Vector2(0.72f, 0.045f),
                                 left ? new Vector2(0.28f, 0.07f) : new Vector2(0.97f, 0.07f));
                 var fill = Box("fill", MeterColor, Vector2.zero, Vector2.one, gauge);
                 meterImage[i] = fill;
                 meterFill[i] = fill.rectTransform;
                 Inset(meterFill[i]);
+                for (int s = 0; s < MaxStocks; s++)
+                {
+                    float x0 = left ? 0.03f + s * 0.03f : 0.97f - (s + 1) * 0.03f + 0.005f;
+                    stockBox[i, s] = Box($"stock{i}{s}", Dark, new Vector2(x0, 0.074f), new Vector2(x0 + 0.025f, 0.098f));
+                }
                 meterText[i] = Label($"meterText{i}", "", 26, left ? TextAnchor.LowerLeft : TextAnchor.LowerRight,
-                                     left ? new Vector2(0.03f, 0.072f) : new Vector2(0.72f, 0.072f),
-                                     left ? new Vector2(0.28f, 0.11f) : new Vector2(0.97f, 0.11f));
+                                     left ? new Vector2(0.125f, 0.072f) : new Vector2(0.72f, 0.072f),
+                                     left ? new Vector2(0.28f, 0.11f) : new Vector2(0.875f, 0.11f));
             }
             timer = Label("timer", "60", 64, TextAnchor.MiddleCenter, new Vector2(0.455f, 0.875f), new Vector2(0.545f, 0.985f));
-            help = Label("help", "1P: A/D move  W/S side step  J K U I = A B C D  1 2 3 / L O P = skills (or 236 / 214 / 236236 + J or U)   F1/F2: CPU on/off   F3: motions   F4: cloth   F5: skirt   F6: clothes burst   F7: select   F8: camera",
-                         20, TextAnchor.LowerCenter, new Vector2(0.2f, 0.0f), new Vector2(0.8f, 0.04f));
+            help = Label("help", "1P: A/D move  W jump (tap: hop)  S crouch  back = block  J K U I = A B C D  H = A+B roll  Y = C+D blowback  1 2 3 = skills (236 / 214 / 236236 + J or U)   F1/F2: CPU   F3: motions   F4: cloth   F5: skirt   F6: clothes burst   F7: select   F8: team / single",
+                         18, TextAnchor.LowerCenter, new Vector2(0.1f, 0.0f), new Vector2(0.9f, 0.04f));
             help.gameObject.SetActive(showHelp && !drawnByCamera);
             BuildSelect(game);
             // over both screens
@@ -110,9 +140,9 @@ namespace RoeFighter.Fight
             // long names ("GODDESS LUF WINS THE MATCH") get smaller instead of running off the screen
             message.horizontalOverflow = HorizontalWrapMode.Wrap;
             message.resizeTextForBestFit = true;
-            message.resizeTextMinSize = 48;
+            message.resizeTextMinSize = 40;
             message.resizeTextMaxSize = 120;
-            notice = Label("notice", "", 22, TextAnchor.UpperCenter, new Vector2(0.1f, 0.63f), new Vector2(0.9f, 0.865f));
+            notice = Label("notice", "", 22, TextAnchor.UpperCenter, new Vector2(0.1f, 0.63f), new Vector2(0.9f, 0.83f));
             notice.horizontalOverflow = HorizontalWrapMode.Wrap;
             notice.verticalOverflow = VerticalWrapMode.Truncate;
             notice.resizeTextForBestFit = true;
@@ -121,15 +151,14 @@ namespace RoeFighter.Fight
             Refresh(game);
         }
 
-        /// <summary>A card per fighter along the bottom, the two picked by name on either side, whose turn it is at the top.</summary>
+        /// <summary>A card per fighter along the bottom, the teams by name on either side, whose turn it is at the top.</summary>
         void BuildSelect(FightGame game)
         {
             layer = selectLayer.transform;
             int n = game.roster != null ? game.roster.Length : 0;
             cardFrame = new Image[n];
             cardTag = new Text[n];
-            // the cards a row fits on the screen holds 13 of; more get smaller, all of a card alike (14 since 10-17: the row ran off
-            // both edges)
+            // the cards a row fits on the screen holds 13 of; more get smaller, all of a card alike
             float fit = Mathf.Min(1f, 13f / Mathf.Max(1, n));
             float w = 0.085f * fit, gap = 0.014f * fit, y0 = 0.075f, y1 = y0 + 0.24f * fit;
             float x = 0.5f - (n * w + (n - 1) * gap) * 0.5f;
@@ -155,29 +184,34 @@ namespace RoeFighter.Fight
                 var band = Box("band", new Color(0f, 0f, 0f, 0.6f), new Vector2(0f, 0f), new Vector2(1f, 0.2f), inner);
                 var name = Label($"cardName{k}", rig != null ? rig.displayName : "?", 22, TextAnchor.MiddleCenter, Vector2.zero, Vector2.one);
                 name.transform.SetParent(band.transform, false);
-                // a long name shrinks into its card, on two lines if that is bigger (13 cards since 10-17: CRANE KART and PINK
-                // CRANE KART ran into each other at 22)
+                // a long name shrinks into its card, on two lines if that is bigger
                 name.horizontalOverflow = HorizontalWrapMode.Wrap;
                 name.verticalOverflow = VerticalWrapMode.Truncate;
                 name.resizeTextForBestFit = true;
                 name.resizeTextMinSize = 10;
                 name.resizeTextMaxSize = 22;
                 name.lineSpacing = 0.85f;
-                cardTag[k] = Label($"cardTag{k}", "", 28, TextAnchor.LowerCenter, new Vector2(x - 0.02f, y1 + 0.01f), new Vector2(x + w + 0.02f, y1 + 0.06f));
+                cardTag[k] = Label($"cardTag{k}", "", 26, TextAnchor.LowerCenter, new Vector2(x - 0.02f, y1 + 0.01f), new Vector2(x + w + 0.02f, y1 + 0.06f));
+                cardTag[k].resizeTextForBestFit = true;
+                cardTag[k].resizeTextMinSize = 10;
+                cardTag[k].resizeTextMaxSize = 26;
             }
             for (int i = 0; i < 2; i++)
             {
                 bool left = i == 0;
                 pickName[i] = Label($"pick{i}", "", 64, left ? TextAnchor.LowerLeft : TextAnchor.LowerRight,
-                                    left ? new Vector2(0.04f, 0.4f) : new Vector2(0.56f, 0.4f), left ? new Vector2(0.44f, 0.5f) : new Vector2(0.96f, 0.5f));
+                                    left ? new Vector2(0.04f, 0.42f) : new Vector2(0.56f, 0.42f), left ? new Vector2(0.44f, 0.52f) : new Vector2(0.96f, 0.52f));
                 pickName[i].color = SideColor[i];
                 pickOutfit[i] = Label($"outfit{i}", "", 28, left ? TextAnchor.UpperLeft : TextAnchor.UpperRight,
-                                      left ? new Vector2(0.04f, 0.35f) : new Vector2(0.56f, 0.35f), left ? new Vector2(0.44f, 0.4f) : new Vector2(0.96f, 0.4f));
+                                      left ? new Vector2(0.04f, 0.37f) : new Vector2(0.56f, 0.37f), left ? new Vector2(0.44f, 0.42f) : new Vector2(0.96f, 0.42f));
+                teamList[i] = Label($"team{i}", "", 26, left ? TextAnchor.UpperLeft : TextAnchor.UpperRight,
+                                    left ? new Vector2(0.04f, 0.74f) : new Vector2(0.56f, 0.74f), left ? new Vector2(0.44f, 0.86f) : new Vector2(0.96f, 0.86f));
+                teamList[i].color = SideColor[i];
             }
             selectTitle = Label("selectTitle", "CHARACTER SELECT", 64, TextAnchor.MiddleCenter, new Vector2(0.1f, 0.88f), new Vector2(0.9f, 0.97f));
             selectTitle.color = Gold;
             selectWho = Label("selectWho", "", 30, TextAnchor.MiddleCenter, new Vector2(0.1f, 0.83f), new Vector2(0.9f, 0.88f));
-            selectHelp = Label("selectHelp", "1P: A / D choose   J confirm   K back        2P: ← / → choose   1 confirm   2 back        F1 / F2: CPU on / off",
+            selectHelp = Label("selectHelp", "1P: A / D choose   J add to the team   K take back        2P: ← / → choose   keypad 1 add   keypad 2 back        F1 / F2: CPU on / off   F8: team / single",
                                22, TextAnchor.LowerCenter, new Vector2(0.1f, 0.005f), new Vector2(0.9f, 0.045f));
             selectHelp.gameObject.SetActive(showHelp && !drawnByCamera);
         }
@@ -249,11 +283,11 @@ namespace RoeFighter.Fight
             if (notice != null)
             {
                 // in the match one setting a line under the timer; on the select screen one line along the top edge (below
-                // it: the title and whose turn it is); the type shrinks to fit (it ran off both sides at 1280 wide)
+                // it: the title and whose turn it is); the type shrinks to fit
                 notice.text = selecting ? game.Notice.Replace("\n", "    ") : game.Notice;
                 var rt = notice.rectTransform;
                 rt.anchorMin = selecting ? new Vector2(0.05f, 0.962f) : new Vector2(0.1f, 0.63f);
-                rt.anchorMax = selecting ? new Vector2(0.95f, 0.998f) : new Vector2(0.9f, 0.865f);
+                rt.anchorMax = selecting ? new Vector2(0.95f, 0.998f) : new Vector2(0.9f, 0.83f);
                 notice.alignment = selecting ? TextAnchor.MiddleCenter : TextAnchor.UpperCenter;
             }
             if (selecting)
@@ -261,21 +295,43 @@ namespace RoeFighter.Fight
                 RefreshSelect(game);
                 return;
             }
+            bool teams = game.TeamMode;
             for (int i = 0; i < 2; i++)
             {
                 var x = game.f[i];
+                if (x.rig != null)
+                    names[i].text = x.rig.displayName;
                 float hp = Mathf.Clamp01(x.hp / (float)x.maxHp);
                 lag[i] = Mathf.Max(hp, Mathf.MoveTowards(lag[i], hp, 0.012f));
                 SetFill(hpFill[i], hp, i == 0);
                 SetFill(hpLag[i], lag[i], i == 0);
-                float m = Mathf.Clamp01(x.meter / 100f);
-                SetFill(meterFill[i], m, i == 0);
-                meterImage[i].color = m >= 1f ? Gold : MeterColor;
-                meterText[i].text = m >= 1f ? "MAX" : "";
+                // the gauge: the stock being filled, and the stocks held
+                int stocks = x.Stocks;
+                float part = stocks >= MaxStocks ? 1f : Mathf.Clamp01((x.meter - stocks * Fighter.Stock) / Fighter.Stock);
+                SetFill(meterFill[i], part, i == 0);
+                meterImage[i].color = stocks >= MaxStocks ? Gold : MeterColor;
+                for (int s = 0; s < MaxStocks; s++)
+                    stockBox[i, s].color = s < stocks ? Gold : Dark;
+                meterText[i].text = stocks >= MaxStocks ? "MAX" : stocks > 0 ? $"x{stocks}" : "";
                 for (int r = 0; r < 3; r++)
                 {
-                    roundMarks[i, r].gameObject.SetActive(r < game.roundsToWin);
+                    roundMarks[i, r].gameObject.SetActive(!teams && r < game.roundsToWin);
                     roundMarks[i, r].color = r < game.wins[i] ? Gold : Dark;
+                }
+                for (int k = 0; k < MaxTeam; k++)
+                {
+                    bool shown = teams && k < game.teamSize && k < game.team[i].Count;
+                    if (teamFrame[i, k].gameObject.activeSelf != shown)
+                        teamFrame[i, k].gameObject.SetActive(shown);
+                    if (!shown)
+                        continue;
+                    int idx = game.team[i][k];
+                    var rig = game.roster != null && idx >= 0 && idx < game.roster.Length ? game.roster[idx] : null;
+                    teamFace[i, k].texture = rig != null ? rig.portrait : null;
+                    teamFace[i, k].enabled = rig != null && rig.portrait != null;
+                    bool beaten = k < game.current[i];
+                    teamShade[i, k].gameObject.SetActive(beaten);
+                    teamFrame[i, k].color = k == game.current[i] ? SideColor[i] : Dark;
                 }
             }
             timer.text = Mathf.CeilToInt(game.timer).ToString();
@@ -289,6 +345,7 @@ namespace RoeFighter.Fight
             for (int k = 0; k < cardFrame.Length; k++)
             {
                 bool p1 = game.pick[0] == k, p2 = game.pick[1] == k;
+                bool in1 = game.team[0].Contains(k), in2 = game.team[1].Contains(k);
                 float blink = 0.6f + 0.4f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 6f));
                 Color c = Dark;
                 if (p1 && p2)
@@ -297,26 +354,48 @@ namespace RoeFighter.Fight
                     c = SideColor[0] * (game.picked[0] ? 1f : blink);
                 else if (p2)
                     c = SideColor[1] * (game.picked[1] ? 1f : blink);
+                else if (in1 && in2)
+                    c = Color.Lerp(SideColor[0], SideColor[1], 0.5f) * 0.6f;
+                else if (in1)
+                    c = SideColor[0] * 0.6f;
+                else if (in2)
+                    c = SideColor[1] * 0.6f;
                 c.a = 1f;
-                cardFrame[k].color = p1 || p2 ? c : Dark;
+                cardFrame[k].color = c;
                 string Tag(int side) => game.cpu[side] ? "CPU" : side == 0 ? "1P" : "2P";
-                cardTag[k].text = p1 && p2 ? $"{Tag(0)}  {Tag(1)}" : p1 ? Tag(0) : p2 ? Tag(1) : "";
-                cardTag[k].color = p1 && !p2 ? SideColor[0] : p2 && !p1 ? SideColor[1] : Color.white;
+                string Order(int side) => in1 && side == 0 ? $" {game.team[0].IndexOf(k) + 1}" : in2 && side == 1 ? $" {game.team[1].IndexOf(k) + 1}" : "";
+                string tag = p1 && p2 ? $"{Tag(0)}  {Tag(1)}" : p1 ? Tag(0) + Order(0) : p2 ? Tag(1) + Order(1)
+                           : in1 && in2 ? $"{Order(0).Trim()} / {Order(1).Trim()}" : in1 ? Order(0).Trim() : in2 ? Order(1).Trim() : "";
+                cardTag[k].text = tag;
+                cardTag[k].color = (p1 || in1) && !(p2 || in2) ? SideColor[0] : (p2 || in2) && !(p1 || in1) ? SideColor[1] : Color.white;
             }
             for (int i = 0; i < 2; i++)
             {
                 var rig = game.rigs[i];
                 pickName[i].text = rig != null ? rig.displayName : "";
                 pickOutfit[i].text = rig != null ? $"{rig.outfit}  ({rig.id})" + (game.picked[i] ? "   OK" : "") : "";
+                if (game.TeamMode)
+                {
+                    var parts = new System.Collections.Generic.List<string>();
+                    for (int k = 0; k < game.teamSize; k++)
+                    {
+                        string who = k < game.team[i].Count && game.roster != null && game.team[i][k] < game.roster.Length ? game.roster[game.team[i][k]].displayName : "?";
+                        parts.Add($"{k + 1}. {who}");
+                    }
+                    teamList[i].text = string.Join("\n", parts);
+                }
+                else
+                    teamList[i].text = "";
             }
             if (game.picked[0] && game.picked[1])
                 selectWho.text = "READY";
             else if (alone)
-                selectWho.text = game.choosing == (game.cpu[0] ? 0 : 1) ? "CHOOSE THE COMPUTER'S FIGHTER" : "CHOOSE YOUR FIGHTER";
+                selectWho.text = game.choosing == (game.cpu[0] ? 0 : 1) ? (game.TeamMode ? "CHOOSE THE COMPUTER'S TEAM" : "CHOOSE THE COMPUTER'S FIGHTER")
+                                                                        : (game.TeamMode ? $"CHOOSE YOUR TEAM ({game.team[game.choosing].Count + 1} OF {game.teamSize})" : "CHOOSE YOUR FIGHTER");
             else if (game.cpu[0] && game.cpu[1])
                 selectWho.text = "COMPUTER AGAINST COMPUTER";
             else
-                selectWho.text = "1P AND 2P: CHOOSE";
+                selectWho.text = game.TeamMode ? "1P AND 2P: CHOOSE YOUR TEAMS" : "1P AND 2P: CHOOSE";
         }
 
         static void SetFill(RectTransform r, float amount, bool fromLeft)

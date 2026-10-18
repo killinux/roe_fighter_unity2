@@ -7,11 +7,15 @@ using UnityEngine.Playables;
 namespace RoeFighter.Fight
 {
     /// <summary>
-    /// The fight: two fighters on one of the game's stages, best of three rounds, 60 seconds each.
+    /// The fight: a side-view fighting game in the manner of The King of Fighters on one of the game's stages.
+    /// Two fighters on one line (axis), the camera square to it; teams of three (teamSize) that fight one
+    /// member at a time, the winner staying on with what health she has left, or a single match best of
+    /// three rounds (teamSize 1).  60 seconds a round.
     /// Runs at a fixed 60 steps per second.  Each step: inputs (keyboard, pad or CPU), the fighters'
     /// state machines, their poses, then the hit checks on the posed bodies (the striking bone
-    /// against the opponent's body capsule), the special moves' hits, the effects, the round
-    /// rules, the camera.  Step() can also be driven from the editor to film a CPU match.
+    /// against the opponent's body capsule, shorter when she crouches), the throws, the special
+    /// moves' hits, the effects, the round rules, the camera.  Step() can also be driven from the
+    /// editor to film a CPU match.
     /// </summary>
     public class FightGame : MonoBehaviour
     {
@@ -22,13 +26,14 @@ namespace RoeFighter.Fight
             public GameObject prefab;
         }
 
-        public FighterRig[] rigs = new FighterRig[2];     // the two of this match (roster[pick], set by Setup / the select screen)
+        public FighterRig[] rigs = new FighterRig[2];     // the two fighting now (roster[pick], set by Setup / the select screen)
         public FighterRig[] roster = new FighterRig[0];   // everyone the scene holds; empty: rigs as built
-        public int[] pick = { 0, 1 };                      // roster entries of 1P and 2P
+        public int[] pick = { 0, 1 };                      // roster entries of the two on the stage (the select screen's highlighted cards)
         public bool selectFirst = true;                    // play mode, more than two in the roster: the select screen first
         public bool[] cpu = { false, true };
         public List<Move> moves = new List<Move>();
         public List<Special> specials = new List<Special>();
+        public MotionPack basics;                          // crouching, jumping, blocking, the reactions, the crouching / jumping / CD strikes, the throw
         public List<NamedPrefab> effects = new List<NamedPrefab>();
         public string hitEffect;                     // a small hit spark for strikes (and armour coming off)
         /// <summary>
@@ -41,26 +46,21 @@ namespace RoeFighter.Fight
         public float hitLightScale = 0.35f, hitMediumScale = 0.45f, hitHeavyScale = 0.55f, hitBlockScale = 0.4f;
         public int hitMediumDamage = 55, hitHeavyDamage = 80;
         public Vector3 centre;
-        public Vector3 axis = Vector3.right;         // round start: fighters stand along this line
+        public Vector3 axis = Vector3.right;         // the fight line: fighter 1 stands at -, fighter 2 at +; screen right from the camera's side
+        public Vector3 normal;                       // from the fight line towards the camera (zero: worked out from the axis)
         public float arenaRadius = 7f;
         public float startGap = 3.2f;
+        public float maxSeparation = 6.8f;           // the two never get farther apart than this (the picture holds both)
         public Camera cam;
-        // the camera keeps out of the stage (user 10-05 "继续" after 10-04's "镜头跑到栅栏外面"): it films from where the
-        // stage's room (measured when the scene is built) has space and nothing stands between it and the two - square-on
-        // if it can, else swung round up to camMaxOrbit, closer (the view widens to keep the framing), round on the other
-        // side of the two, and with none of that clear what is in the way is cut away (the near plane moves past it)
-        public CameraRoom room;
-        public bool camAvoid = true;          // -roeCamAvoid 0: the old camera, which went wherever the framing put it
-        public float camMargin = 0.6f;        // metres the camera keeps from the stage
-        public float camMaxOrbit = 60f;       // degrees it may swing round from square-on, either way
-        public float camMinDistance = 2.4f;   // the closest it comes
-        public float camMaxFov = 50f;         // the widest view
-        public bool camOtherSide = true;      // with no room on its side, it may go round to the other side
-        public float camCutAngle = 100f;      // a turn round the two larger than this is a cut, not a swing
-        public float camFov;                  // the view square-on (0: the camera's own, taken at the first frame)
-        public float camNear = 0.1f;
+        public float camFov = 30f;                   // the camera's view (0: the camera's own)
+        public float camMinDistance = 5.2f, camMaxDistance = 8.8f;   // from the fight line, by how far apart the two are
+        public float camHeight = 0.9f;               // m above the floor the camera looks at (half a metre of floor under the line stays in view)
+        public float camLift = 0.45f;                // m the look-at rises per metre of the higher fighter's height (jumps)
+        public float camRise = 0.3f;                 // m the camera stands above the point it looks at
+        public float camEdge = 0.6f;                 // the picture may reach this far past the edge of the stage
         public FightHud hud;
-        public int roundsToWin = 2;
+        public int roundsToWin = 2;                  // single matches (teamSize 1)
+        public int teamSize = 3;                     // 3: KOF-style teams, one member at a time; 1: a single match
         public float roundSeconds = 60f;
         public string voiceLanguage = "2";           // the game's voice language: 2 Japanese, 1 English
         public int seed = 1;
@@ -71,13 +71,24 @@ namespace RoeFighter.Fight
         public int motionPack;
         float noticeTime;
 
-        /// <summary>Lines under the timer, one per setting: the motion pack, the cloth, the skirt, the clothes burst, the camera -
+        /// <summary>The teams: roster entries in fighting order; current = who of each is fighting.</summary>
+        public readonly List<int>[] team = { new List<int>(), new List<int>() };
+        public readonly int[] current = new int[2];
+        public bool TeamMode => teamSize > 1;
+
+        /// <summary>Half the length of the fight line the fighters may use (short of the stage's edge: the ring's gates and fences
+        /// stand there, and a camera looking at someone against them films through them).</summary>
+        public float HalfWidth => arenaRadius - edgeMargin;
+        public float edgeMargin = 1.6f;
+        public Vector3 Normal => normal.sqrMagnitude > 0.5f ? normal.normalized : Vector3.Cross(axis, Vector3.up).normalized;
+
+        /// <summary>Lines under the timer, one per setting: the mode, the motion pack, the cloth, the skirt, the clothes burst -
         /// for a few seconds after a switch or a new match.</summary>
         public string Notice => noticeTime <= 0f ? "" :
-            string.Join("\n", new[] { Pack != null ? $"MOTIONS: {Pack.title}" : null, $"CLOTH: {RoeClothBackends.Find(FighterRig.ClothBackend).title}",
+            string.Join("\n", new[] { $"MODE: {(TeamMode ? $"{teamSize} vs {teamSize} team battle" : $"1 vs 1, best of {roundsToWin * 2 - 1}")}",
+                                       Pack != null ? $"MOTIONS: {Pack.title}" : null, $"CLOTH: {RoeClothBackends.Find(FighterRig.ClothBackend).title}",
                                        RoeClothBackends.Find(FighterRig.ClothBackend).skinnedSkirt ? $"SKIRT: {(RoeSkirtRig.Drape > 0f ? "hangs" : "fitted")}" : null,
-                                       rigs.Any(r => r != null && r.burst != null) ? $"CLOTHES BURST: {(RoeClothesBurst.Enabled ? "on" : "off")}" : null,
-                                       room != null && room.Valid ? $"CAMERA: {(camAvoid ? "avoids walls" : "free")}" : null }.Where(s => s != null));
+                                       rigs.Any(r => r != null && r.burst != null) ? $"CLOTHES BURST: {(RoeClothesBurst.Enabled ? "on" : "off")}" : null }.Where(s => s != null));
 
         public MotionPack Pack => motionPacks.Count > 0 ? motionPacks[Mathf.Clamp(motionPack, 0, motionPacks.Count - 1)] : null;
 
@@ -86,11 +97,11 @@ namespace RoeFighter.Fight
         public int frame;
         public float timer;
         public int round;
-        public readonly int[] wins = new int[2];
+        public readonly int[] wins = new int[2];       // single: rounds won; teams: opponents beaten
         public string message = "";
         public enum Phase { Select, Intro, Fight, RoundOver, MatchOver }
         public Phase phase = Phase.Intro;
-        public readonly bool[] picked = new bool[2];   // the select screen: this side's fighter is confirmed
+        public readonly bool[] picked = new bool[2];   // the select screen: this side's team is complete
         public int choosing;                           // the select screen: the side whose card the keys move (one human: hers, then the CPU's)
         readonly Dictionary<int, FighterRig> twins = new Dictionary<int, FighterRig>();   // a second copy of a fighter, for a mirror match
         float phaseTime, hitStop, slowMotion;
@@ -126,23 +137,15 @@ namespace RoeFighter.Fight
 
         readonly List<Scheduled> schedule = new List<Scheduled>();
         float clock;
-        Vector3 camSide;
         Vector3 camPos, camTarget;
+        bool camSnap = true;
         float shakeTime, shakeAmplitude, shakeDuration;
-        Vector3 camAim;                 // the direction chosen last step (the next choice prefers to stay near it)
-        float camDistance;
-        bool camWidened, camCut;
-        public int camCuts, camJumps;   // recordings: cuts to the other side, jumps straight to the shot
-
-        public enum CamMode { Cutaway = -1, SquareOn, SwungRound, Closer, OtherSide }
-        public CamMode camMode;
-        public readonly int[] camModeSteps = new int[5];    // recordings: how often the camera did what (index = mode + 1)
 
         void Start()
         {
-            // the player: ROEFighter.exe -roeBurst 0 starts with the clothes burst off (F6 switches it);
-            // -roeP1 b10 -roeP2 g05 picks the two; -roeSelect 0 goes straight into the match; -roeCloth magica starts with
-            // that physics setup (F4 goes on from it)
+            // the player: ROEFighter2.exe -roeBurst 0 starts with the clothes burst off (F6 switches it);
+            // -roeP1 a08,g04,b10 -roeP2 kas,mai,raven picks the teams (-roeTeam 1: a single match, -roeP1 b10 -roeP2 g05);
+            // -roeSelect 0 goes straight into the match; -roeCloth magica starts with that physics setup (F4 goes on from it)
             var args = Environment.GetCommandLineArgs();
             string Arg(string name)
             {
@@ -156,8 +159,8 @@ namespace RoeFighter.Fight
             // -roeSkirtSwing "g04:restore=0.1,...": a fighter's skirt swinging like her game's keys, tuned otherwise
             if (Arg("-roeSkirtSwing") != null)
                 RoeBoneCloth.SwingFromArg(Arg("-roeSkirtSwing"));
-            if (Arg("-roeCamAvoid") != null)
-                camAvoid = Arg("-roeCamAvoid") != "0";
+            if (Arg("-roeTeam") != null && int.TryParse(Arg("-roeTeam"), out int size))
+                teamSize = Mathf.Clamp(size, 1, 5);
             PickIds(Arg("-roeP1"), Arg("-roeP2"));
             if (Arg("-roeSelect") != null)
                 selectFirst = Arg("-roeSelect") != "0";
@@ -167,17 +170,43 @@ namespace RoeFighter.Fight
                 Setup();
         }
 
-        /// <summary>Picks by character id (null or unknown: that side's pick stays).</summary>
+        /// <summary>Picks by character id, a comma-separated team each (null or unknown ids: that side's picks stay).</summary>
         public void PickIds(string p1, string p2)
         {
             if (roster == null)
                 return;
             for (int i = 0; i < 2; i++)
             {
-                string id = i == 0 ? p1 : p2;
-                int k = string.IsNullOrEmpty(id) ? -1 : Array.FindIndex(roster, r => r != null && r.id == id);
-                if (k >= 0)
-                    pick[i] = k;
+                string ids = i == 0 ? p1 : p2;
+                if (string.IsNullOrEmpty(ids))
+                    continue;
+                var found = ids.Split(',').Select(id => Array.FindIndex(roster, r => r != null && r.id == id.Trim())).Where(k => k >= 0).Distinct().ToList();
+                if (found.Count == 0)
+                    continue;
+                team[i].Clear();
+                team[i].AddRange(found);
+                pick[i] = found[0];
+            }
+        }
+
+        /// <summary>Every team filled to teamSize: the highlighted card first, then the next of the roster not yet in it.</summary>
+        void FillTeams()
+        {
+            int n = roster != null ? roster.Length : 0;
+            for (int i = 0; i < 2; i++)
+            {
+                team[i].RemoveAll(k => k < 0 || k >= n);
+                if (team[i].Count > teamSize)
+                    team[i].RemoveRange(teamSize, team[i].Count - teamSize);
+                if (team[i].Count == 0)
+                    team[i].Add(Mathf.Clamp(pick[i], 0, Mathf.Max(0, n - 1)));
+                int next = team[i][team[i].Count - 1];
+                while (team[i].Count < teamSize && team[i].Count < n)
+                {
+                    next = (next + 1) % n;
+                    if (!team[i].Contains(next))
+                        team[i].Add(next);
+                }
             }
         }
 
@@ -209,14 +238,13 @@ namespace RoeFighter.Fight
             return twin;
         }
 
-        /// <summary>A new match with the picked two.</summary>
+        /// <summary>A new match with the picked teams.</summary>
         public void Setup()
         {
-            Prepare();
             StartMatch();
         }
 
-        /// <summary>The picked two ready to fight: the motion pack's moves, their rigs, whole outfits.</summary>
+        /// <summary>The two of pick[] ready to fight: the motion pack's moves, their rigs, whole outfits.</summary>
         void Prepare()
         {
             Application.targetFrameRate = 60;
@@ -229,8 +257,8 @@ namespace RoeFighter.Fight
                 foreach (var m in moves)
                     if (string.IsNullOrEmpty(m.hitSound))
                         m.hitSound = "hit";
-                noticeTime = 4f;
             }
+            noticeTime = 4f;
             for (int i = 0; i < 2; i++)
                 PrepareSide(i);
             f[0].foe = f[1];
@@ -241,16 +269,26 @@ namespace RoeFighter.Fight
         {
             if (Pack != null)
                 rigs[i].UseMotions(Pack);
+            rigs[i].AddMotions(basics);
             rigs[i].Init();
             f[i] = new Fighter { rig = rigs[i], game = this, index = i };
-            ai[i] = new FightAI(seed * 7919 + i * 104729);
-            // her own strikes (g04: Mai Shiranui's) or the pack's
+            if (f[1 - i] != null)
+            {
+                f[i].foe = f[1 - i];
+                f[1 - i].foe = f[i];
+            }
+            ai[i] = new FightAI(seed * 7919 + i * 104729 + round * 31);
+            // her own strikes (g04: Mai Shiranui's) or the pack's; the basics for everything else
             var own = rigs[i].strikePack;
             f[i].moves = own != null && own.strikes.Count > 0 ? own.CopyStrikes() : moves;
             foreach (var m in f[i].moves)
                 if (string.IsNullOrEmpty(m.hitSound))
                     m.hitSound = "hit";
-            // a new match: the outfit is whole again
+            f[i].basics = basics != null ? basics.CopyStrikes() : new List<Move>();
+            foreach (var m in f[i].basics)
+                if (string.IsNullOrEmpty(m.hitSound))
+                    m.hitSound = "hit";
+            // a new fighter: the outfit is whole
             var burst = rigs[i].burst;
             if (burst != null)
             {
@@ -260,30 +298,37 @@ namespace RoeFighter.Fight
             }
         }
 
-        // ---- the select screen: who fights (KOF-like: a card per fighter, the two picked stand on the stage)
+        // ---- the select screen: who fights (KOF-like: a card per fighter, the two highlighted stand on the stage; a team is picked in order)
 
         /// <summary>
         /// The select screen as ROE's own menus show a heroine (user 10-06: "选人环节也做个动画，ROE里面标准的动画"): the fighter of
         /// a card turns from facing the other this far towards the camera (0..1) and loops her outfit's showcase idle
         /// (idle_02); a confirmed pick plays her showcase reaction - the game's idle02_react01, react_01 with its "yes" line
-        /// (FighterRig.showcase) - and the match starts once both have played out (at most selectWait s after the second pick).
+        /// (FighterRig.showcase) - and the match starts once both teams are complete and the last reactions have played out
+        /// (at most selectWait s after the last pick).
         /// </summary>
         public float selectFaceCamera = 0.8f;
         public string selectReaction = "idle02_react01";
         public float selectWait = 3.5f;
         readonly float[] reactUntil = new float[2];      // phaseTime at which a pick's reaction is over (0: none)
         readonly bool[] showingReact = new bool[2];
-        readonly bool[] wasPicked = new bool[2];
+        readonly int[] shownPicks = new int[2];          // how many members each side had confirmed at the last frame
 
-        /// <summary>To the select screen; the cards start on the current picks.</summary>
+        /// <summary>To the select screen; the cards start on the current picks, the teams are chosen afresh.</summary>
         public void EnterSelect()
         {
+            for (int i = 0; i < 2; i++)
+            {
+                if (team[i].Count > 0)
+                    pick[i] = team[i][0];
+                team[i].Clear();
+            }
             Prepare();
             phase = Phase.Select;
             phaseTime = 0f;
             message = "";
             picked[0] = picked[1] = false;
-            wasPicked[0] = wasPicked[1] = false;
+            shownPicks[0] = shownPicks[1] = 0;
             choosing = cpu[0] && !cpu[1] ? 1 : 0;
             StandForSelect();
             PlayMusic();
@@ -302,9 +347,8 @@ namespace RoeFighter.Fight
             {
                 if (only >= 0 && i != only)
                     continue;
-                var me = i == 0 ? a : b;
-                var other = i == 0 ? b : a;
-                f[i].Reset(me, Yaw(other - me));
+                f[i].Reset(i == 0 ? a : b, i == 0 ? 1 : -1);
+                f[i].Revive();
                 reactUntil[i] = 0f;
                 showingReact[i] = false;
                 ShowIdle(i, 0.2f);
@@ -366,14 +410,15 @@ namespace RoeFighter.Fight
             }
         }
 
-        /// <summary>Picks confirmed or taken back since the last frame: the reaction, or back to the idle; a reaction played out: the idle.</summary>
+        /// <summary>A member confirmed since the last frame: her reaction; one taken back: the idle; a reaction played out: the idle.</summary>
         void ShowPicks()
         {
             for (int i = 0; i < 2; i++)
             {
-                if (picked[i] && !wasPicked[i])
+                int count = team[i].Count;
+                if (count > shownPicks[i] && team[i][count - 1] == pick[i])
                     ShowPicked(i);
-                else if (!picked[i] && wasPicked[i])
+                else if (count < shownPicks[i])
                 {
                     reactUntil[i] = 0f;
                     showingReact[i] = false;
@@ -384,11 +429,11 @@ namespace RoeFighter.Fight
                     showingReact[i] = false;
                     ShowIdle(i, 0.3f);
                 }
-                wasPicked[i] = picked[i];
+                shownPicks[i] = count;
             }
         }
 
-        /// <summary>Keys on the select screen: left / right move a card, the first attack button confirms, the second goes back.</summary>
+        /// <summary>Keys on the select screen: left / right move a card, the first attack button adds the card to the team, the second takes the last one back.</summary>
         void UpdateSelect()
         {
             int[] before = { pick[0], pick[1] };
@@ -402,11 +447,20 @@ namespace RoeFighter.Fight
                 SelectKeys(human0 ? 0 : 1, choosing);
             else if (phaseTime > 2f && !picked[0])
             {
-                // the computer on both sides: two at random
+                // the computer on both sides: random teams
                 var rng = new System.Random(seed * 31 + frame);
-                pick[0] = rng.Next(roster.Length);
-                pick[1] = (pick[0] + 1 + rng.Next(roster.Length - 1)) % roster.Length;
-                picked[0] = picked[1] = true;
+                for (int i = 0; i < 2; i++)
+                {
+                    team[i].Clear();
+                    while (team[i].Count < Mathf.Min(teamSize, roster.Length))
+                    {
+                        int k = rng.Next(roster.Length);
+                        if (!team[i].Contains(k))
+                            team[i].Add(k);
+                    }
+                    pick[i] = team[i][team[i].Count - 1];
+                    picked[i] = true;
+                }
             }
             PicksChanged(before);
             if (picked[0] && picked[1])
@@ -448,15 +502,12 @@ namespace RoeFighter.Fight
             // the one who came out stands in her showcase idle; the other goes on with what she was doing
             for (int i = 0; i < 2; i++)
                 if (changed[i])
-                {
                     StandForSelect(i);
-                    wasPicked[i] = false;
-                }
             if (hud != null)
                 hud.Build(this);
         }
 
-        /// <summary>The select screen is done (both picked): the match starts.</summary>
+        /// <summary>The select screen is done (both teams complete): the match starts.</summary>
         public void BeginMatch() => StartMatch();
 
         float selectDone = -1f;
@@ -482,15 +533,20 @@ namespace RoeFighter.Fight
                 ok = Input.GetKeyDown(KeyCode.Keypad1) || Input.GetKeyDown(KeyCode.KeypadEnter);
                 back = Input.GetKeyDown(KeyCode.Keypad2);
             }
-            bool alone = cpu[0] != cpu[1];      // one human: she picks her fighter, then the computer's
+            bool alone = cpu[0] != cpu[1];      // one human: she picks her team, then the computer's
             if (back)
             {
-                if (picked[side])
+                if (team[side].Count > 0)
+                {
+                    team[side].RemoveAt(team[side].Count - 1);
                     picked[side] = false;
+                }
                 else if (alone && picked[1 - side])
                 {
                     picked[1 - side] = false;
                     choosing = 1 - side;
+                    if (team[1 - side].Count > 0)
+                        team[1 - side].RemoveAt(team[1 - side].Count - 1);
                 }
                 return;
             }
@@ -498,21 +554,32 @@ namespace RoeFighter.Fight
                 return;
             if (move != 0 && roster.Length > 0)
                 pick[side] = (pick[side] + move + roster.Length) % roster.Length;
-            if (ok)
+            if (ok && !team[side].Contains(pick[side]))
             {
-                picked[side] = true;
-                if (alone && !picked[1 - side])
-                    choosing = 1 - side;
+                team[side].Add(pick[side]);
+                if (team[side].Count >= Mathf.Min(teamSize, roster.Length))
+                {
+                    picked[side] = true;
+                    if (alone && !picked[1 - side])
+                        choosing = 1 - side;
+                }
             }
         }
 
         void StartMatch()
         {
+            FillTeams();
             wins[0] = wins[1] = 0;
             round = 0;
             frame = 0;
             clock = 0f;
             soundLog.Clear();
+            current[0] = current[1] = 0;
+            pick[0] = team[0][0];
+            pick[1] = team[1][0];
+            Prepare();
+            f[0].Revive();
+            f[1].Revive();
             PlayMusic();
             if (hud != null)
                 hud.Build(this);
@@ -545,8 +612,8 @@ namespace RoeFighter.Fight
             timer = roundSeconds;
             var a = centre - axis * (startGap * 0.5f);
             var b = centre + axis * (startGap * 0.5f);
-            f[0].Reset(a, Yaw(b - a));
-            f[1].Reset(b, Yaw(a - b));
+            f[0].Reset(a, 1);
+            f[1].Reset(b, -1);
             foreach (var x in live)
                 if (x.instance != null)
                     DestroyAny(x.instance);
@@ -558,9 +625,11 @@ namespace RoeFighter.Fight
                     rig.burst.ClearDebris();
             phase = Phase.Intro;
             phaseTime = 0f;
-            message = $"ROUND {round}";
+            message = TeamMode ? $"ROUND {round}\n{f[0].rig.displayName}  vs  {f[1].rig.displayName}" : $"ROUND {round}";
             hitStop = 0f;
             slowMotion = 0f;
+            if (hud != null)
+                hud.Build(this);
         }
 
         static float Yaw(Vector3 v) => Mathf.Atan2(v.x, v.z) * Mathf.Rad2Deg;
@@ -598,13 +667,13 @@ namespace RoeFighter.Fight
             }
             if (Input.GetKeyDown(KeyCode.F8))
             {
-                // the camera keeps out of the stage / goes wherever the framing puts it (the old one, through fences)
-                camAvoid = !camAvoid;
-                cam.fieldOfView = camFov > 0f ? camFov : cam.fieldOfView;
-                cam.nearClipPlane = camNear;
-                camWidened = camCut = false;
+                // team battle (3 vs 3) or a single match; back to the select screen
+                teamSize = TeamMode ? 1 : 3;
                 noticeTime = 4f;
-                Debug.Log($"[ROE] camera: {(camAvoid ? "avoids walls" : "free")} (F8)");
+                if (roster != null && roster.Length > 2)
+                    EnterSelect();
+                else
+                    Setup();
             }
             if (Input.GetKeyDown(KeyCode.F6))
             {
@@ -616,7 +685,7 @@ namespace RoeFighter.Fight
                             rigs[i].burst.Restore(seed * 7919 + i * 104729 + 31 + frame);
                 noticeTime = 4f;
             }
-            // after the match: back to the select screen (the same two are still picked: confirm twice for a rematch)
+            // after the match: back to the select screen
             if (phase == Phase.MatchOver && phaseTime > 2f && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton7)))
             {
                 if (roster != null && roster.Length > 2)
@@ -700,23 +769,16 @@ namespace RoeFighter.Fight
                     break;
             }
 
-            var camRight = cam != null ? Flat(cam.transform.right) : Vector3.right;
-            var camForward = cam != null ? Flat(cam.transform.forward) : Vector3.forward;
+            var camRight = cam != null ? Flat(cam.transform.right) : axis;
             for (int i = 0; i < 2; i++)
             {
                 var me = f[i];
                 var input = phase == Phase.Fight
                     ? (cpu[i] ? ai[i].Decide(me, dt, camRight) : inputs != null && inputs.Length > i ? inputs[i] : default)
                     : default;
-                var toFoe = Flat(me.foe.pos - me.pos);
-                int screenSign = Vector3.Dot(toFoe, camRight) >= 0f ? 1 : -1;
-                int fwd = input.x * screenSign;
-                // a side step goes into the screen (up) or out of it (down), across the line between the two
-                var across = Vector3.Cross(Vector3.up, toFoe).normalized;
-                if (Vector3.Dot(across, camForward) < 0f)
-                    across = -across;
-                var sideDir = input.y != 0 ? across * input.y : Vector3.zero;
-                me.Step(dt, fwd, input.y, sideDir, input);
+                // towards the opponent is forward, whichever way the camera looks at the line
+                int screenSign = Vector3.Dot(axis * me.FoeSide, camRight) >= 0f ? 1 : -1;
+                me.Step(dt, input.x * screenSign, input.y, input);
             }
             KeepApart();
             foreach (var x in f)
@@ -737,26 +799,27 @@ namespace RoeFighter.Fight
             return v.sqrMagnitude > 1e-8f ? v.normalized : Vector3.forward;
         }
 
+        /// <summary>Two bodies on the floor do not overlap: pushed apart along the line (one against the wall: the other gives way).</summary>
         void KeepApart()
         {
-            var d = f[1].pos - f[0].pos;
-            d.y = 0f;
-            float dist = d.magnitude;
+            bool skip = f.Any(x => x.Airborne || x.state == FightState.Roll || x.state == FightState.Special || x.state == FightState.Throw ||
+                                   x.state == FightState.Thrown || x.state == FightState.Down || x.state == FightState.KO);
+            if (skip)
+                return;
+            float d = f[1].U - f[0].U;
             float min = Fighter.BodyRadius * 2f;
-            bool special = f[0].state == FightState.Special || f[1].state == FightState.Special;
-            if (dist < min && dist > 1e-4f && !special)
+            if (Mathf.Abs(d) >= min)
+                return;
+            float sign = d >= 0f ? 1f : -1f;
+            float need = (min - Mathf.Abs(d)) * 0.5f;
+            if (f[0].atWall && !f[1].atWall)
+                f[1].U += sign * need * 2f;
+            else if (f[1].atWall && !f[0].atWall)
+                f[0].U -= sign * need * 2f;
+            else
             {
-                var push = d / dist * ((min - dist) * 0.5f);
-                f[0].pos -= push;
-                f[1].pos += push;
-            }
-            foreach (var x in f)
-            {
-                var r = x.pos - centre;
-                r.y = 0f;
-                float limit = arenaRadius - 0.4f;
-                if (r.magnitude > limit)
-                    x.pos = centre + r.normalized * limit + Vector3.up * (x.pos.y - centre.y);
+                f[0].U -= sign * need;
+                f[1].U += sign * need;
             }
         }
 
@@ -766,6 +829,17 @@ namespace RoeFighter.Fight
             {
                 var atk = f[i];
                 var vic = f[1 - i];
+                // a throw: the grab
+                if (atk.Grabbing)
+                {
+                    if (vic.Throwable && atk.Dist < Fighter.ThrowRange + 0.1f && vic.state != FightState.Special)
+                    {
+                        atk.Grab(vic);
+                        PlaySound(atk, "hit", 0.7f);
+                        hitStop = 0.05f;
+                    }
+                    continue;
+                }
                 var p = atk.ActiveHit();
                 if (p == null || !vic.Hittable || vic.state == FightState.Special)
                     continue;
@@ -774,25 +848,55 @@ namespace RoeFighter.Fight
                     continue;
                 atk.hitDone = true;
                 atk.connected = true;
-                var dir = Flat(vic.pos - atk.pos);
-                if (vic.CanBlock)
+                if (vic.CanBlock && vic.Blocks(m))
                 {
-                    vic.BlockHit(m.blockstun, dir * (m.push * 0.5f / 0.12f));
-                    atk.meter = Mathf.Min(100f, atk.meter + m.meterGain * 0.5f);
+                    vic.BlockHit(m.blockstun, m.push * 0.5f, vic.downHeld > 0);
+                    if (vic.atWall)
+                        atk.PushBack(m.push * 0.5f);
+                    atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + m.meterGain * 0.5f);
                     PlaySound(vic, "block", 0.8f);
                     StrikeSpark(p.Value, m, true);
                     hitStop = 0.05f;
                 }
                 else
                 {
-                    vic.TakeHit(m.damage, m.hitstun, dir * (m.push / 0.12f), m.knockdown);
-                    atk.meter = Mathf.Min(100f, atk.meter + m.meterGain);
+                    bool heavy = m.knockdown || m.launch || m.damage >= hitHeavyDamage;
+                    vic.TakeHit(m.damage, m.hitstun, m.push, m.knockdown, m.launch, m.launchUp, m.launchBack, m.Low);
+                    // the blowback attack (C+D) that lands takes the next stage of her outfit off (user 10-18 "爆衣效果也加上")
+                    if (m.launch)
+                        BurstClothes(vic, vic.lastHitDir);
+                    if (vic.atWall && !vic.Airborne)
+                        atk.PushBack(m.push * 0.6f);
+                    atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + m.meterGain);
+                    atk.comboHits++;
                     PlaySound(atk, m.hitSound, 1f);
                     StrikeSpark(p.Value, m, false);
-                    hitStop = m.damage >= 80 ? 0.1f : 0.07f;
-                    Shake(m.damage >= 80 ? 0.6f : 0.3f, 0.2f);
+                    hitStop = heavy ? 0.1f : 0.07f;
+                    Shake(heavy ? 0.6f : 0.3f, 0.2f);
                 }
             }
+        }
+
+        /// <summary>A throw's blows: the hold (she stays grabbed, never KO'd by it) and the toss (she flies and falls).</summary>
+        public void ThrowHit(Fighter atk, Fighter vic, int damage, bool toss)
+        {
+            if (vic.state != FightState.Thrown)
+                return;
+            if (!toss)
+            {
+                vic.hp = Mathf.Max(1, vic.hp - damage);
+                PlaySound(atk, "hit", 1f);
+                hitStop = 0.05f;
+                Shake(0.3f, 0.15f);
+                return;
+            }
+            vic.Tossed(damage);
+            BurstClothes(vic, vic.lastHitDir);      // thrown: a stage of her outfit comes off
+            atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + 8f);
+            atk.comboHits++;
+            PlaySound(atk, "hit", 1f);
+            Shake(0.5f, 0.2f);
+            hitStop = 0.08f;
         }
 
         // ---- specials
@@ -856,27 +960,34 @@ namespace RoeFighter.Fight
             var vic = atk.foe;
             if (atk.specialOutcome == 0)
             {
-                float reach = BlowReach(atk.rig.sheet != null ? atk.rig.sheet.Find(s.action) : null, vic);
-                atk.specialOutcome = !vic.Hittable || Vector3.Distance(atk.pos, vic.pos) > reach ? 3 : vic.CanBlock ? 2 : 1;
+                // a ranged skill (Inase's thrown swords, Kart's pistols, Amano's super; FighterRig.rangedSkills) reaches her anywhere
+                // along the line - but not in the air, where a jump takes her over it
+                bool ranged = atk.rig.IsRanged(s.name);
+                float reach = ranged ? Mathf.Max(s.range, maxSeparation + 1f) : BlowReach(atk.rig.sheet != null ? atk.rig.sheet.Find(s.action) : null, vic);
+                bool over = ranged && vic.Airborne && vic.H > 0.5f;
+                atk.specialOutcome = !vic.Hittable || over || Vector3.Distance(atk.pos, vic.pos) > reach ? 3 : vic.CanBlock ? 2 : 1;
             }
             if (atk.specialOutcome == 3 || !vic.Hittable)
                 return;
-            var dir = Flat(vic.pos - atk.pos);
             float hold = atk.SpecialRemaining + 0.15f;
             if (atk.specialOutcome == 2)
             {
                 vic.hp = Mathf.Max(1, vic.hp - Mathf.RoundToInt(damage * 0.1f));
-                vic.BlockHit(last ? 0.3f : hold, dir * 0.6f);
+                vic.BlockHit(last ? 0.3f : hold, 0.07f, vic.downHeld > 0);
                 hitStop = 0.04f;
                 return;
             }
             bool knockdown = last && s.meterCost > 0f;
-            vic.TakeHit(damage, last ? 0.6f : hold, dir * (last ? 2.5f : 0.4f), knockdown);
-            atk.meter = Mathf.Min(100f, atk.meter + (s.meterCost > 0f ? 0f : 4f));
+            if (vic.Airborne)
+                vic.TakeHit(damage, last ? 0.6f : hold, 0.05f, false);
+            else
+                vic.TakeHit(damage, last ? 0.6f : hold, last ? 0.3f : 0.05f, knockdown);
+            atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + (s.meterCost > 0f ? 0f : 4f));
+            atk.comboHits++;
             hitStop = last ? 0.12f : 0.04f;
             // the super's finishing blow takes the next stage of her outfit off
             if (knockdown)
-                BurstClothes(vic, dir);
+                BurstClothes(vic, vic.lastHitDir);
         }
 
         // ---- clothes burst (爆衣): a super that lands and a KO each take the next stage of the victim's outfit off
@@ -940,7 +1051,7 @@ namespace RoeFighter.Fight
             float scale;
             if (blocked)
                 (name, scale) = (hitBlock, hitBlockScale);
-            else if (m.knockdown || m.damage >= hitHeavyDamage)
+            else if (m.knockdown || m.launch || m.damage >= hitHeavyDamage)
                 (name, scale) = (hitHeavy, hitHeavyScale);
             else if (m.damage >= hitMediumDamage)
                 (name, scale) = (hitMedium, hitMediumScale);
@@ -1057,6 +1168,11 @@ namespace RoeFighter.Fight
 
         // ---- rounds
 
+        int roundWinner = -1;
+
+        /// <summary>The side that won the match (-1: none yet / a draw).</summary>
+        public int matchWinner = -1;
+
         void Rules()
         {
             switch (phase)
@@ -1071,7 +1187,7 @@ namespace RoeFighter.Fight
                         if (ko0 || ko1)
                             slowMotion = 0.8f;
                         // a KO takes the next stage of the loser's outfit off; the KO that ends the match all that is left
-                        bool final = winner >= 0 && wins[winner] + 1 >= roundsToWin && burstAllOnFinalKO;
+                        bool final = winner >= 0 && burstAllOnFinalKO && (TeamMode ? current[1 - winner] + 1 >= team[1 - winner].Count : wins[winner] + 1 >= roundsToWin);
                         if (ko0)
                             BurstClothes(f[0], f[0].lastHitDir, final && winner == 1);
                         if (ko1)
@@ -1093,15 +1209,14 @@ namespace RoeFighter.Fight
                     }
                     if (phaseTime > 4.2f)
                     {
-                        if (wins[0] >= roundsToWin || wins[1] >= roundsToWin)
-                        {
-                            phase = Phase.MatchOver;
-                            phaseTime = 0f;
-                            int w = wins[0] >= roundsToWin ? 0 : 1;
-                            message = $"{f[w].rig.displayName} WINS THE MATCH";
-                        }
+                        if (TeamMode)
+                            NextInTeams();
+                        else if (wins[0] >= roundsToWin || wins[1] >= roundsToWin)
+                            EndMatch(wins[0] >= roundsToWin ? 0 : 1);
                         else
                         {
+                            f[0].Revive();
+                            f[1].Revive();
                             StartRound();
                         }
                     }
@@ -1109,19 +1224,72 @@ namespace RoeFighter.Fight
             }
         }
 
-        int roundWinner = -1;
+        /// <summary>
+        /// Team battle, after a round: the loser's next member comes in (her side out of members: the match is over); the
+        /// winner stays with her health, a little of it back by the time she had left; a draw sends both teams' next ones in.
+        /// </summary>
+        void NextInTeams()
+        {
+            var fresh = new bool[2];
+            for (int i = 0; i < 2; i++)
+                if (roundWinner != i)
+                {
+                    current[i]++;
+                    fresh[i] = true;
+                }
+            bool out0 = current[0] >= team[0].Count, out1 = current[1] >= team[1].Count;
+            if (out0 || out1)
+            {
+                EndMatch(out0 && out1 ? -1 : out0 ? 1 : 0);
+                return;
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                if (fresh[i])
+                {
+                    pick[i] = team[i][current[i]];
+                    ApplyPicks();
+                    PrepareSide(i);
+                    f[i].Revive();
+                }
+                else
+                    f[i].hp = Mathf.Min(f[i].maxHp, f[i].hp + Mathf.RoundToInt(f[i].maxHp * (0.08f + 0.12f * timer / roundSeconds)));
+            }
+            // (a twin may have come or gone: both sides' rigs must be the ones in play; the one who stays keeps her health and gauge)
+            for (int i = 0; i < 2; i++)
+                if (f[i].rig != rigs[i])
+                {
+                    int hp = f[i].hp;
+                    float meter = f[i].meter;
+                    PrepareSide(i);
+                    f[i].hp = hp;
+                    f[i].meter = meter;
+                }
+            f[0].foe = f[1];
+            f[1].foe = f[0];
+            StartRound();
+        }
 
-        // ---- camera: from the side of the line between the two, far enough to keep both in the picture
+        void EndMatch(int winner)
+        {
+            phase = Phase.MatchOver;
+            phaseTime = 0f;
+            matchWinner = winner;
+            if (winner < 0)
+                message = "DRAW GAME";
+            else if (TeamMode)
+                message = $"{(winner == 0 ? "1P" : "2P")} TEAM WINS\n{f[winner].rig.displayName} STANDS";
+            else
+                message = $"{f[winner].rig.displayName} WINS THE MATCH";
+        }
+
+        // ---- camera: square to the fight line, following the two along it, wider as they part
 
         public void SnapCamera()
         {
-            camSide = Vector3.zero;
-            camAim = Vector3.zero;
-            camDistance = 0f;
-            UpdateCamera(10f);
+            camSnap = true;
+            UpdateCamera(0f);
         }
-
-        bool Avoiding => camAvoid && room != null && room.Valid;
 
         public void UpdateCamera(float dt)
         {
@@ -1129,60 +1297,23 @@ namespace RoeFighter.Fight
                 return;
             if (camFov <= 0f)
                 camFov = cam.fieldOfView;
-            var a = f[0].pos;
-            var b = f[1].pos;
-            var line = Flat(b - a);
-            var side = Vector3.Cross(line, Vector3.up).normalized;
-            if (camSide.sqrMagnitude < 0.5f)
-                camSide = Flat(cam.transform.position - (a + b) * 0.5f);
-            if (Vector3.Dot(side, camSide) < 0f)
-                side = -side;
-            float sep = Vector3.Distance(a, b);
-            float distance = Mathf.Clamp(sep * 0.85f + 2.9f, 3.6f, 9.5f);
-            var mid = (a + b) * 0.5f;
-            var (dir, far, mode) = Frame(mid, side, distance, a, b);
-            camAim = dir;
-            camMode = mode;
-            camModeSteps[(int)mode + 1]++;
-
-            // swing round about the upright through the two; round to the other side is a cut (a swing would pass
-            // through the fence or the two themselves)
-            bool snap = dt >= 1f || (mode == CamMode.OtherSide && Vector3.Angle(camSide, dir) > camCutAngle);
-            if (snap && dt < 1f)
-                camCuts++;
-            float k3 = snap ? 1f : 1f - Mathf.Exp(-dt * 3f);
-            float turn = Vector3.SignedAngle(camSide, dir, Vector3.up);
-            camSide = (Quaternion.AngleAxis(turn * k3, Vector3.up) * camSide).normalized;
-            camDistance = !Avoiding || camDistance <= 0f || snap ? far : Mathf.Lerp(camDistance, far, k3);
-
-            var target = mid + Vector3.up * 1.0f;
-            var eye = target + camSide * camDistance + Vector3.up * 0.45f;
-            float k = 1f - Mathf.Exp(-dt * 5f);
-            camPos = snap ? eye : Vector3.Lerp(camPos, eye, k);
-            camTarget = snap ? target : Vector3.Lerp(camTarget, target, k);
-            // on its way from one shot to the next the camera may pass where the stage is in the way: then straight to the shot
-            if (Avoiding && mode != CamMode.Cutaway && !snap && !Sees(camPos, a, b))
-            {
-                camSide = dir;
-                camDistance = far;
-                camPos = target + camSide * camDistance + Vector3.up * 0.45f;
-                camTarget = target;
-                camJumps++;
-            }
-            // closer than the framing wants: the view widens to keep both in the picture
-            float fov = Mathf.Clamp(2f * Mathf.Atan(Mathf.Tan(camFov * 0.5f * Mathf.Deg2Rad) * distance / Mathf.Max(0.1f, camDistance)) * Mathf.Rad2Deg,
-                                    camFov, Mathf.Max(camFov, camMaxFov));
-            if (Avoiding && (fov > camFov + 0.01f || camWidened))
-            {
-                cam.fieldOfView = fov;
-                camWidened = fov > camFov + 0.01f;
-            }
-            // nothing clear: the near plane moves past whatever stands between the camera and the two
-            if (Avoiding && (mode == CamMode.Cutaway || camCut))
-            {
-                cam.nearClipPlane = mode == CamMode.Cutaway ? Cutaway(camPos, a, b) : camNear;
-                camCut = mode == CamMode.Cutaway;
-            }
+            cam.fieldOfView = camFov;
+            float ua = f[0].U, ub = f[1].U;
+            float sep = Mathf.Abs(ua - ub), mid = (ua + ub) * 0.5f;
+            float high = Mathf.Max(f[0].H, f[1].H);
+            // wider as the two part, and a little as one of them goes up (a jump at close range kept her head in the picture)
+            float distance = Mathf.Clamp(sep * 0.8f + 3.3f + 0.7f * Mathf.Clamp(high, 0f, 2.5f), camMinDistance, camMaxDistance);
+            // the picture stays on the stage: the view's half width at the fight line against the stage's half length
+            float aspect = cam.aspect > 0.1f ? cam.aspect : 16f / 9f;
+            float halfView = distance * Mathf.Tan(camFov * 0.5f * Mathf.Deg2Rad) * aspect;
+            float limit = Mathf.Max(0f, HalfWidth + camEdge - halfView);
+            mid = Mathf.Clamp(mid, -limit, limit);
+            var target = centre + axis * mid + Vector3.up * (camHeight + camLift * Mathf.Clamp(high, 0f, 2.5f));
+            var eye = target + Normal * distance + Vector3.up * camRise;
+            float k = camSnap || dt >= 1f ? 1f : 1f - Mathf.Exp(-dt * 6f);
+            camSnap = false;
+            camPos = Vector3.Lerp(camPos, eye, k);
+            camTarget = Vector3.Lerp(camTarget, target, k);
             var shake = Vector3.zero;
             if (shakeTime < shakeDuration)
             {
@@ -1195,65 +1326,6 @@ namespace RoeFighter.Fight
             cam.transform.position = camPos + shake;
             cam.transform.LookAt(camTarget + shake, Vector3.up);
         }
-
-        /// <summary>
-        /// Where to film from this step: the direction from the two's midpoint to the camera, its distance and how it
-        /// came about.  Tries square-on first, then swung round (5-degree steps up to camMaxOrbit), closer (0.3 m steps,
-        /// no closer than the widest view allows), then the same round on the other side; each try costs by how far it
-        /// is from square-on, how much closer, the other side, and how far it is from the last choice (so the camera
-        /// does not flick between two near-equal shots).  The cheapest that stands in the room with a clear view of
-        /// both wins; with none, square-on and the cut-away.
-        /// </summary>
-        (Vector3 dir, float distance, CamMode mode) Frame(Vector3 mid, Vector3 side, float ideal, Vector3 a, Vector3 b)
-        {
-            if (!Avoiding)
-                return (side, ideal, CamMode.SquareOn);
-            float closest = Mathf.Min(ideal, Mathf.Max(camMinDistance,
-                ideal * Mathf.Tan(camFov * 0.5f * Mathf.Deg2Rad) / Mathf.Tan(Mathf.Max(camFov, camMaxFov) * 0.5f * Mathf.Deg2Rad)));
-            var aim = camAim.sqrMagnitude > 0.5f ? camAim : side;
-            int steps = Mathf.Max(1, Mathf.CeilToInt(camMaxOrbit / 5f));
-            float best = float.MaxValue;
-            var shot = (side, ideal, CamMode.Cutaway);
-            for (int other = 0; other < (camOtherSide ? 2 : 1); other++)
-                for (int j = 0; j <= 2 * steps; j++)
-                {
-                    int i = (j + 1) / 2 * (j % 2 == 1 ? 1 : -1);     // 0, 1, -1, 2, -2, ...: the likely ones first
-                    float orbit = camMaxOrbit * i / steps;
-                    var dir = Quaternion.AngleAxis(orbit + 180f * other, Vector3.up) * side;
-                    float away = Vector3.Angle(dir, aim) / 90f;
-                    float cost0 = Sq(orbit / Mathf.Max(1f, camMaxOrbit)) + 1.5f * other + 0.5f * away * away;
-                    for (float d = ideal; d >= closest - 1e-3f && cost0 < best; d -= 0.3f)
-                    {
-                        float cost = cost0 + 2f * Sq((ideal - d) / ideal);
-                        if (cost >= best)
-                            break;
-                        var eye = mid + dir * d;
-                        if (room.Clearance(eye) < camMargin || !room.Clear(eye, a) || !room.Clear(eye, b))
-                            continue;
-                        best = cost;
-                        shot = (dir, d, other == 1 ? CamMode.OtherSide : d < ideal - 0.01f ? CamMode.Closer : i != 0 ? CamMode.SwungRound : CamMode.SquareOn);
-                        break;
-                    }
-                }
-            return shot;
-        }
-
-        static float Sq(float x) => x * x;
-
-        /// <summary>Does the camera at <paramref name="eye"/> have room and a clear view of both?</summary>
-        bool Sees(Vector3 eye, Vector3 a, Vector3 b) => room.Clearance(eye) >= camMargin * 0.5f && room.Clear(eye, a) && room.Clear(eye, b);
-
-        /// <summary>The near plane just past the last of the stage between the camera and the two (never past the nearer one).</summary>
-        float Cutaway(Vector3 eye, Vector3 a, Vector3 b)
-        {
-            float last = Mathf.Max(room.LastBlocked(eye, a), room.LastBlocked(eye, b));
-            if (last < 0f)
-                return camNear;
-            float nearer = Mathf.Min(Vector3.Distance(Flat0(eye), Flat0(a)), Vector3.Distance(Flat0(eye), Flat0(b)));
-            return Mathf.Clamp(last + 0.3f, camNear, Mathf.Max(camNear, nearer - 0.8f));
-        }
-
-        static Vector3 Flat0(Vector3 v) => new Vector3(v.x, 0f, v.z);
 
         public void Shake(float amplitude, float duration)
         {

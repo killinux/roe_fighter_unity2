@@ -20,10 +20,11 @@ namespace RoeFighter.EditorTools
     /// select screen picks two; the others wait put away), the fight logic, camera and HUD.  Saved as
     /// Assets/RoeFighter/Scenes/Fight_&lt;stage&gt;.unity (press Play).
     ///   Build   -executeMethod RoeFighter.EditorTools.RoeFightScene.Build [-roeStage e23_steel_s02] [-roeRoster a08,g04,b10,g05,kas]
-    ///           [-roeP1 a08] [-roeP2 g04]   (the two picked when the scene starts)
+    ///           [-roeP1 a08,g04,b10] [-roeP2 kas,mai,raven]   (the teams picked when the scene starts; the first of each stands on the stage)
+    ///           [-roeTeam 3] (1: single matches)  [-roeBasics kof_basics] (the pack of crouching, jumping, blocking and the reactions)
     ///   Record  -executeMethod RoeFighter.EditorTools.RoeFightScene.Record [-roeStage ...] [-roeOut dir] [-roeSeconds 90]
     ///           [-roeSize 1280x720] [-roeSeed 1] [-roeP1 b10] [-roeP2 g05]   CPU against CPU, frames + timeline.json for tools/make_video.py
-    ///           [-roeCamAvoid 0] the old camera; [-roeFrames 0] no frames, only the match and how often the stage hid the two
+    ///           [-roeTeam 3] [-roeFrames 0] no frames, only the match and how often the stage hid the two
     ///   Player  -executeMethod RoeFighter.EditorTools.RoeFightScene.BuildPlayer [-roeStage ...] [-roeOut dir]
     /// </summary>
     public static class RoeFightScene
@@ -80,11 +81,14 @@ namespace RoeFighter.EditorTools
         static List<string> Roster(string p1, string p2)
         {
             var ids = RoeCapture.Arg("-roeRoster", DefaultRoster).Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
-            foreach (var id in new[] { p1, p2 })
+            foreach (var id in Ids(p1).Concat(Ids(p2)))
                 if (!ids.Contains(id))
                     ids.Add(id);
             return ids.Where(id => File.Exists(RoeHumanoid.FighterPath(id)) && (DoaFighter.IsDoa(id) || File.Exists(RoeSkillSheet.PathOf(id)))).ToList();
         }
+
+        /// <summary>"a08,g04,b10" as ids (a team; one id is a team of one).</summary>
+        static string[] Ids(string list) => (list ?? "").Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
 
         /// <summary>
         /// A Dead or Alive 6 character (user 10-04: "doa6中的 Kasumi也加入一个角色"; DoaFighter, tools/doa/&lt;id&gt;.json): her model
@@ -212,14 +216,13 @@ namespace RoeFighter.EditorTools
             var sight = new RoeStage.Sight();
             var layout = RoeStage.FindLayout(info, sight, false);
             var (centre, radius) = SurveyArena(stage, layout.centre) ?? BestArena(sight, layout.centre);
-            var room = MeasureRoom(sight, centre, radius, stage);
             sight.Dispose();
             Debug.Log($"[ROE] fight scene {stage}: arena centre {centre} (fight line centre {layout.centre}), free radius {radius:F1} m, " +
                       $"fighters along {layout.axis}, camera side {layout.normal}");
 
             var manifest = RoeManifest.Load();
             var roster = ids.Select(id => DoaFighter.IsDoa(id) ? MakeDoaFighter(id) : MakeFighter(manifest.characters.First(c => c.id == id))).ToArray();
-            int pick1 = Mathf.Max(0, ids.IndexOf(p1)), pick2 = Mathf.Max(0, ids.IndexOf(p2));
+            int pick1 = Mathf.Max(0, ids.IndexOf(Ids(p1).FirstOrDefault() ?? "")), pick2 = Mathf.Max(0, ids.IndexOf(Ids(p2).FirstOrDefault() ?? ""));
             var rigs = new[] { roster[pick1], roster[pick2] };
             // the ones not in the match wait put away (the select screen brings them out)
             foreach (var r in roster)
@@ -231,7 +234,7 @@ namespace RoeFighter.EditorTools
             cam.clearFlags = CameraClearFlags.Skybox;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 600f;
-            cam.fieldOfView = 32f;
+            cam.fieldOfView = 30f;
             cam.allowHDR = true;
             cam.allowMSAA = true;
             camGo.tag = "MainCamera";
@@ -258,18 +261,28 @@ namespace RoeFighter.EditorTools
             game.pick = new[] { pick1, pick2 };
             game.centre = centre;
             game.axis = layout.axis;
+            game.normal = layout.normal;
             game.arenaRadius = Mathf.Clamp(radius, 3f, 12f);
-            game.room = room;
+            game.teamSize = Mathf.Clamp(int.Parse(RoeCapture.Arg("-roeTeam", "3")), 1, 5);
             game.cam = cam;
             game.hud = hud;
+            game.PickIds(p1, p2);
             // the basic moves: every motion pack built so far; the fight starts with -roeMotions (default bandai1)
             if (!File.Exists(RoeMotionPacks.PackPath("bandai1")))
                 RoeMotionPacks.BuildBandai();
             game.motionPacks = RoeMotionPacks.All();
             string wanted = RoeCapture.Arg("-roeMotions", "bandai1");
             game.motionPack = Mathf.Max(0, game.motionPacks.FindIndex(p => p.name == wanted));
+            // the basics of the side-view fight (crouching, jumping, blocking, the reactions, the crouching / jumping / CD strikes,
+            // the throw): one pack for everyone - UFE 2's Robot Kyle, tools/motionpacks/kof_basics.json - imported if it is not built yet
+            game.basics = OwnStrikes(RoeCapture.Arg("-roeBasics", "kof_basics"));
+            if (game.basics == null)
+                Debug.LogWarning("[ROE] no basics pack: nobody can crouch, jump or block low");
             foreach (var rig in roster)
+            {
                 rig.UseMotions(game.Pack);
+                rig.AddMotions(game.basics);
+            }
             game.moves = game.Pack.CopyStrikes();
             game.specials = new List<Special>
             {
@@ -315,7 +328,8 @@ namespace RoeFighter.EditorTools
             EditorSceneManager.SaveScene(scene, path, false);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(path, true) };
             Debug.Log($"[ROE] fight scene saved: {path} (roster {string.Join(" ", ids)}, picked {p1} {p2}; {game.moves.Count} strikes, {game.specials.Count} specials, {game.effects.Count} effect prefabs, hit spark {game.hitEffect}, music {(musicPath ?? "none")}; " +
-                      $"motion packs {string.Join(", ", game.motionPacks.Select(p => p.name))}, starting with {game.Pack.name})");
+                      $"motion packs {string.Join(", ", game.motionPacks.Select(p => p.name))}, starting with {game.Pack.name}; " +
+                      $"basics {(game.basics != null ? $"{game.basics.name} ({game.basics.clips.Count} clips, {game.basics.strikes.Count} strikes)" : "none")}; teams of {game.teamSize})");
             return path;
         }
 
@@ -464,62 +478,6 @@ namespace RoeFighter.EditorTools
             return best;
         }
 
-        /// <summary>
-        /// The stage's room for the fight camera (FightGame.room): a grid of 0.25 m cells 48 m across around the arena;
-        /// a cell is blocked when solid stage geometry passes through it between 0.3 and 2.6 m above the arena floor
-        /// (the camera's and the fighters' heights: walls, props, a ring's ropes).  A map of it goes to
-        /// _work/camera_room/&lt;stage&gt;.png (red blocked, grey free - darker nearer the stage, green the arena).
-        /// </summary>
-        public static CameraRoom MeasureRoom(RoeStage.Sight sight, Vector3 centre, float arenaRadius, string stage)
-        {
-            var t0 = DateTime.Now;
-            var room = new CameraRoom { cell = 0.25f, size = 192 };
-            float half = room.size * room.cell * 0.5f;
-            room.origin = new Vector3(centre.x - half, centre.y, centre.z - half);
-            int n = room.size;
-            var blocked = new bool[n * n];
-            var box = new Vector3(room.cell * 0.5f, (room.bandHigh - room.bandLow) * 0.5f, room.cell * 0.5f);
-            float y = centre.y + (room.bandLow + room.bandHigh) * 0.5f;
-            int count = 0;
-            for (int z = 0; z < n; z++)
-                for (int x = 0; x < n; x++)
-                    if (sight.Occupied(new Vector3(room.origin.x + (x + 0.5f) * room.cell, y, room.origin.z + (z + 0.5f) * room.cell), box))
-                    {
-                        blocked[x + z * n] = true;
-                        count++;
-                    }
-            room.SetBlocked(blocked);
-
-            const int scale = 2;
-            var map = new Texture2D(n * scale, n * scale, TextureFormat.RGB24, false);
-            var pixels = new Color32[n * n * scale * scale];
-            for (int z = 0; z < n; z++)
-                for (int x = 0; x < n; x++)
-                {
-                    var p = new Vector3(room.origin.x + (x + 0.5f) * room.cell, 0f, room.origin.z + (z + 0.5f) * room.cell);
-                    float c = room.clearance[x + z * n] * CameraRoom.Unit;
-                    float r = new Vector2(p.x - centre.x, p.z - centre.z).magnitude;
-                    byte grey = (byte)Mathf.Lerp(90f, 230f, Mathf.Clamp01(c / 3f));
-                    var colour = blocked[x + z * n] ? new Color32(200, 30, 30, 255)
-                        : Mathf.Abs(r - arenaRadius) < room.cell * 0.6f ? new Color32(40, 200, 60, 255)
-                        : new Color32(grey, grey, grey, 255);
-                    for (int dz = 0; dz < scale; dz++)
-                        for (int dx = 0; dx < scale; dx++)
-                            pixels[(x * scale + dx) + (z * scale + dz) * n * scale] = colour;
-                }
-            map.SetPixels32(pixels);
-            map.Apply();
-            string dir = Path.Combine(ProjectDir, "_work", "camera_room");
-            Directory.CreateDirectory(dir);
-            File.WriteAllBytes(Path.Combine(dir, stage + ".png"), map.EncodeToPNG());
-            Object.DestroyImmediate(map);
-            Debug.Log($"[ROE] camera room {stage}: {n} x {n} cells of {room.cell} m around {centre}, {count} blocked " +
-                      $"({room.bandLow}-{room.bandHigh} m over the floor; {sight.SeeThrough} see-through renderers not counted), " +
-                      $"stage nearest the arena centre {room.Clearance(centre):F2} m (arena radius {arenaRadius:F1}), " +
-                      $"{(DateTime.Now - t0).TotalSeconds:F1} s");
-            return room;
-        }
-
         /// <summary>One fighter: root with the rig component, the game's unit prefab (skills, effects), our humanoid model.</summary>
         static FighterRig MakeFighter(RoeManifest.Character c)
         {
@@ -652,6 +610,10 @@ namespace RoeFighter.EditorTools
             }
             if (Setting(Table("-roeWeaponScale", "g04=0.7"), c.id, out var size))
                 rig.weaponScale = float.Parse(size, CultureInfo.InvariantCulture);
+            // her skills that are ranged in her game (user 10-18 "inase有远程攻击也加上"): their blows reach the opponent anywhere along
+            // the fight line (FighterRig.rangedSkills; several as skill1+skill2) - Inase's thrown swords, Kart's pistols, Amano's super
+            if (Setting(Table("-roeRanged", "a08=skill2,b10=skill1+skill2,m02=skill3"), c.id, out var ranged))
+                rig.rangedSkills = ranged;
             // heels or flat feet (user 10-03: "有的角色是有高跟鞋的，有的角色是没有的，得区分一下"): measured on her own standing
             // clips (RoeFeet); -roeFeet g05=flat,b10=heels overrides
             var feetKind = RoeFeet.Measure(c.id);
@@ -701,7 +663,7 @@ namespace RoeFighter.EditorTools
                       $"{rig.clips.Count} clips, {rig.weaponRenderers.Length} weapon renderers, {rig.sounds.Count} sounds, " +
                       $"clothes burst {(rig.burst != null ? rig.burst.Report() : "none")}, {showNote}, " +
                       $"own strikes {(rig.strikePack != null ? $"{rig.strikePack.name} ({string.Join(" ", rig.strikePack.strikes.Select(m => $"{m.button} {m.name}"))})" : "none")}, " +
-                      $"{guardNote}, weapon size {rig.weaponScale:F2}{feetNote} " +
+                      $"{guardNote}, weapon size {rig.weaponScale:F2}, ranged skills {(string.IsNullOrEmpty(rig.rangedSkills) ? "none" : rig.rangedSkills)}{feetNote} " +
                       $"(hit sound {(hit.p != null ? Path.GetFileName(hit.p) : "none")}; sfx: {string.Join(" ", c.sfx.Take(12).Select(Path.GetFileNameWithoutExtension))})");
             return rig;
         }
@@ -851,7 +813,8 @@ namespace RoeFighter.EditorTools
             string pack = RoeCapture.Arg("-roeMotions", null);
             if (pack != null)
                 game.motionPack = Mathf.Max(0, game.motionPacks.FindIndex(p => p.name == pack));
-            game.camAvoid = RoeCapture.Arg("-roeCamAvoid", "1") != "0";
+            if (RoeCapture.Arg("-roeTeam", null) is string teamArg)
+                game.teamSize = Mathf.Clamp(int.Parse(teamArg), 1, 5);
             game.Setup();
 
             var hide = new HideCounter(game);
@@ -888,7 +851,7 @@ namespace RoeFighter.EditorTools
                 if (s % 60 == 0)
                     states.Append($"\n[ROE]   t={s / 60f,5:F1}s {game.phase} {game.message} | " +
                                   string.Join(" | ", game.f.Select(x => $"{x.rig.id} {x.state} hp {x.hp} meter {x.meter:F0} at {x.pos.x:F1},{x.pos.z:F1}")) +
-                                  $" | camera {game.camMode} fov {game.cam.fieldOfView:F0} near {game.cam.nearClipPlane:F1}");
+                                  $" | round {game.round} wins {game.wins[0]}-{game.wins[1]} | camera fov {game.cam.fieldOfView:F0}");
                 if (game.phase == FightGame.Phase.MatchOver && endAfter < 0)
                     endAfter = s + 240;
                 if (endAfter >= 0 && s >= endAfter)
@@ -896,7 +859,7 @@ namespace RoeFighter.EditorTools
             }
             int sounds = WriteTimeline(game, outDir, shot, every);
             hide.Dispose();
-            Debug.Log($"[ROE] camera ({(game.camAvoid && game.room != null && game.room.Valid ? "keeps out of the stage" : "the old one")}): {hide.Report(game)}");
+            Debug.Log($"[ROE] camera: {hide.Report(game)}");
             Debug.Log($"[ROE] fight recorded: {shot} frames ({shot * every / 60f:F1} s), {sounds} sounds, rounds won {game.wins[0]}-{game.wins[1]}, " +
                       $"to {outDir}{states}");
         }
@@ -908,7 +871,8 @@ namespace RoeFighter.EditorTools
             var lines = new List<string>();
             foreach (var e in game.soundLog)
             {
-                var rig = game.rigs.FirstOrDefault(r => r.id == e.fighter);
+                // by id among everyone the scene holds: in a team battle the fighter who made the sound may have left the stage
+                var rig = (game.roster ?? new FighterRig[0]).Concat(game.rigs).FirstOrDefault(r => r != null && r.id == e.fighter);
                 var clip = rig?.sounds.FirstOrDefault(x => x.name == e.name)?.clip;
                 if (clip == null)
                     continue;
@@ -928,7 +892,7 @@ namespace RoeFighter.EditorTools
         /// waits until both are back in guard.  Filmed by the fight's camera with the HUD; the sounds in timeline.json for
         /// tools/make_video.py.
         ///   -executeMethod RoeFighter.EditorTools.RoeFightScene.SkillReel [-roeP1 m02] [-roeP2 a08] [-roeSkills 1,2,3]
-        ///   [-roeOut _work\skills_m02] [-roeSize 1280x720] [-roeStage e23_steel_s02] [-roeBurst 1]
+        ///   [-roeOut _work\skills_m02] [-roeSize 1280x720] [-roeStage e23_steel_s02] [-roeBurst 1] [-roeApart 6] (2P this far away first)
         /// </summary>
         public static void SkillReel()
         {
@@ -978,7 +942,7 @@ namespace RoeFighter.EditorTools
                 }
                 s++;
             }
-            bool Ready(Fighter x) => x.state == FightState.Idle || x.state == FightState.Walk || x.state == FightState.Side;
+            bool Ready(Fighter x) => x.Neutral;
 
             while (game.phase != FightGame.Phase.Fight && s < limit)
                 Advance(null);
@@ -992,6 +956,13 @@ namespace RoeFighter.EditorTools
                 }
                 if (k == 3)
                     game.f[0].meter = 100f;
+                // -roeApart 6: the opponent put this far away first (a ranged skill shown from afar; the others walk up)
+                float apart = float.Parse(RoeCapture.Arg("-roeApart", "0"), CultureInfo.InvariantCulture);
+                if (apart > 0f)
+                {
+                    game.f[1].U = Mathf.Clamp(game.f[0].U + game.f[0].FoeSide * apart, -game.HalfWidth, game.HalfWidth);
+                    game.f[1].Place();
+                }
                 // a skill that reaches less far than she stands: walk up first, as the CPU does
                 string skillName = "skill" + k;
                 for (int walk = 0; walk < 240 && s < limit &&
@@ -1075,7 +1046,7 @@ namespace RoeFighter.EditorTools
                 {
                     hiddenFrames++;
                     hiddenAt.Add(time);
-                    string m = $"{game.phase}/{game.camMode}";
+                    string m = $"{game.phase}";
                     modes[m] = modes.TryGetValue(m, out int c) ? c + 1 : 1;
                 }
             }
@@ -1101,11 +1072,7 @@ namespace RoeFighter.EditorTools
 
             public string Report(FightGame game)
             {
-                int total = Mathf.Max(1, game.camModeSteps.Sum());
-                string Mode(FightGame.CamMode m) => $"{m} {100f * game.camModeSteps[(int)m + 1] / total:F1}%";
-                return $"the stage hid part of a fighter in {hiddenFrames} of {frames} frames ({Share:F1}%), {hiddenRays} of {rays} rays; " +
-                       $"steps {Mode(FightGame.CamMode.SquareOn)}, {Mode(FightGame.CamMode.SwungRound)}, {Mode(FightGame.CamMode.Closer)}, " +
-                       $"{Mode(FightGame.CamMode.OtherSide)}, {Mode(FightGame.CamMode.Cutaway)}, {game.camCuts} cuts, {game.camJumps} jumps; hidden at {Spans()} s; " +
+                return $"the stage hid part of a fighter in {hiddenFrames} of {frames} frames ({Share:F1}%), {hiddenRays} of {rays} rays; hidden at {Spans()} s; " +
                        $"hidden while {string.Join(", ", modes.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Key} {kv.Value}"))}; " +
                        $"in the way: {string.Join(", ", blockers.OrderByDescending(kv => kv.Value).Take(6).Select(kv => $"{kv.Key} x{kv.Value}"))}";
             }
@@ -1113,65 +1080,14 @@ namespace RoeFighter.EditorTools
             public void Dispose() => sight.Dispose();
         }
 
-        /// <summary>
-        /// The old camera against the one that keeps out of the stage, over several CPU matches (nothing filmed; each
-        /// match twice, once with each - the matches differ, since the computer's moves follow the screen):
-        ///   -executeMethod RoeFighter.EditorTools.RoeFightScene.CameraStats [-roeStage e23_steel_s02] [-roeSeconds 120]
-        ///   [-roeMatches fio005:a08:2,a08:g04:1]   (1P:2P:seed; about 2 minutes a match each way)
-        /// </summary>
-        public static void CameraStats()
-        {
-            string stage = RoeCapture.Arg("-roeStage", "e23_steel_s02");
-            float seconds = float.Parse(RoeCapture.Arg("-roeSeconds", "120"), CultureInfo.InvariantCulture);
-            var matches = RoeCapture.Arg("-roeMatches", "fio005:a08:2,a08:g04:1,kas:b10:1,g05:fio005:3").Split(',');
-            ShaderUtil.allowAsyncCompilation = false;
-            var sb = new StringBuilder($"[ROE] camera stats on {stage}, {seconds} s matches (part of a fighter hidden by the stage, share of frames):");
-            float[] sum = new float[2];
-            int count = 0;
-            foreach (var m in matches)
-            {
-                var p = m.Split(':');
-                var line = new StringBuilder($"\n[ROE]   {p[0]} v {p[1]} seed {p[2]}:");
-                for (int avoid = 0; avoid < 2; avoid++)
-                {
-                    EditorSceneManager.OpenScene(ScenePath(stage), OpenSceneMode.Single);
-                    var game = Object.FindFirstObjectByType<FightGame>();
-                    game.PickIds(p[0], p[1]);
-                    game.cpu = new[] { true, true };
-                    game.seed = int.Parse(p[2]);
-                    game.camAvoid = avoid == 1;
-                    game.Setup();
-                    using (var hide = new HideCounter(game))
-                    {
-                        int steps = Mathf.RoundToInt(seconds * 60f);
-                        for (int s = 0; s < steps && game.phase != FightGame.Phase.MatchOver; s++)
-                        {
-                            game.Step(null);
-                            game.UpdateCamera(FightGame.Dt);
-                            if (s % 2 == 0)
-                                hide.Look(game, s / 60f);
-                        }
-                        sum[avoid] += hide.Share;
-                        string result = $"{(avoid == 1 ? "new" : "old")}: {hide.Report(game)}; rounds {game.wins[0]}-{game.wins[1]}";
-                        line.Append($"\n[ROE]     {result}");
-                        Debug.Log($"[ROE] camera stats {p[0]} v {p[1]} seed {p[2]} {result}");     // as it comes (a long run may be cut short)
-                    }
-                }
-                count++;
-                sb.Append(line);
-            }
-            sb.Append($"\n[ROE]   mean: old {sum[0] / Mathf.Max(1, count):F1}%, new {sum[1] / Mathf.Max(1, count):F1}%");
-            Debug.Log(sb.ToString());
-        }
-
         // ---- filming the select screen
 
         /// <summary>
         /// The select screen filmed (batch mode has no keys: the cards are moved by script the way the keys move
-        /// them): 1P goes from INASE over LUF to KART and confirms, picks GODDESS LUF for the computer, confirms, and
-        /// the match begins.  On the cards the fighters turn to the camera in their showcase idle; a confirmed pick plays
-        /// her showcase reaction with its line (FightGame.ShowPicked).  Frames and timeline.json (music, the lines) for
-        /// tools/make_video.py.
+        /// them): 1P picks her team of three (KART, LUF, INASE), then the computer's (GODDESS LUF, EVE, RAVEN), and the
+        /// match begins (teamSize 1: one each).  On the cards the fighters turn to the camera in their showcase idle; a
+        /// confirmed pick plays her showcase reaction with its line (FightGame.ShowPicked).  Frames and timeline.json
+        /// (music, the lines) for tools/make_video.py.
         ///   -executeMethod RoeFighter.EditorTools.RoeFightScene.SelectDemo [-roeOut dir] [-roeSize 1280x720]
         /// </summary>
         [MenuItem("ROE Fighter/Fight/Film the select screen")]
@@ -1244,20 +1160,34 @@ namespace RoeFighter.EditorTools
                 game.PicksChanged(before);
                 Recalc();
             }
+            // a card added to a side's team (the key J / keypad 1 does this); the team complete: that side is done
+            void Add(int side)
+            {
+                if (!game.team[side].Contains(game.pick[side]))
+                    game.team[side].Add(game.pick[side]);
+                if (game.team[side].Count >= Mathf.Min(game.teamSize, game.roster.Length))
+                {
+                    game.picked[side] = true;
+                    game.choosing = 1 - side;
+                }
+            }
+            var ours = new[] { "b10", "g04", "a08" };
+            var theirs = new[] { "g05", "eve09", "raven" };
             Film(1.6f, "the select screen: 1P on INASE, the computer on LUF");
-            Move(0, "g04");
-            Film(0.9f, "1P moves to LUF (both on the same card: a mirror match would get a copy)");
-            Move(0, "b10");
-            Film(1.2f, "1P moves to KART");
-            game.picked[0] = true;
-            game.choosing = 1;
-            Film(3.2f, "1P confirms: her showcase reaction (react_01 and its line); now the computer's fighter");
-            Move(1, "a08");
-            Film(0.8f, "the computer's card to INASE");
-            Move(1, "g05");
-            Film(1.2f, "and to GODDESS LUF");
-            game.picked[1] = true;
-            Film(3.4f, "confirmed: her reaction, READY");
+            for (int k = 0; k < game.teamSize && k < ours.Length; k++)
+            {
+                Move(0, ours[k]);
+                Film(1.0f, $"1P moves to {ours[k]}");
+                Add(0);
+                Film(k + 1 < game.teamSize ? 2.2f : 3.0f, $"1P adds {ours[k]} ({k + 1} of {game.teamSize}): her showcase reaction (react_01 and its line)");
+            }
+            for (int k = 0; k < game.teamSize && k < theirs.Length; k++)
+            {
+                Move(1, theirs[k]);
+                Film(1.0f, $"the computer's card to {theirs[k]}");
+                Add(1);
+                Film(k + 1 < game.teamSize ? 2.2f : 3.4f, $"added ({k + 1} of {game.teamSize}): her reaction");
+            }
             game.BeginMatch();
             Film(3.2f, "the match begins");
             string music = game.music != null
@@ -1273,11 +1203,11 @@ namespace RoeFighter.EditorTools
         public static void BuildPlayer()
         {
             string stage = RoeCapture.Arg("-roeStage", "e23_steel_s02");
-            string outDir = RoeCapture.Arg("-roeOut", Path.Combine(ProjectDir, "out", "ROEFighter"));
+            string outDir = RoeCapture.Arg("-roeOut", Path.Combine(ProjectDir, "out", "ROEFighter2"));
             string path = ScenePath(stage);
             if (!File.Exists(path))
                 BuildScene(stage, "a08", "g04");
-            PlayerSettings.productName = "ROE Fighter";
+            PlayerSettings.productName = "ROE Fighter 2";
             PlayerSettings.companyName = "ROE Fighter";
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
             PlayerSettings.defaultScreenWidth = 1600;
@@ -1286,7 +1216,7 @@ namespace RoeFighter.EditorTools
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { path },
-                locationPathName = Path.Combine(outDir, "ROEFighter.exe"),
+                locationPathName = Path.Combine(outDir, "ROEFighter2.exe"),
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.None,
             };

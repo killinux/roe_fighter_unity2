@@ -7,15 +7,17 @@ namespace RoeFighter.Fight
 {
     /// <summary>
     /// A set of basic moves that can be swapped for another: which clip the fight plays in each role
-    /// (stance, walking on, walking back, running) and which strike each attack button throws, with
-    /// its timing.  Every clip is a humanoid clip (muscles), so any humanoid source fits - the public
-    /// motion-capture datasets converted by the editor tools, or animation bought from the Asset
-    /// Store and imported as Humanoid.  The game's own clips (skills, hurt, falls) are not part of a
-    /// pack; they belong to each character.
+    /// (stance, walking on, walking back, running, crouching, jumping, blocking, the reactions...) and
+    /// which strike each attack button throws, with its timing.  Every clip is a humanoid clip
+    /// (muscles), so any humanoid source fits - the public motion-capture datasets converted by the
+    /// editor tools, or animation bought from the Asset Store and imported as Humanoid.  The game's
+    /// own clips (skills, hurt, falls) are not part of a pack; they belong to each character.
     ///
     /// Packs are built by RoeMotionPacks (editor) into Assets/RoeFighter/Generated/motionpacks; the
     /// fight scene gets all of them, starts with the one chosen at build time (-roeMotions) and F3
-    /// switches to the next one in play.
+    /// switches to the next one in play.  The side-view fight also has one "basics" pack (kof_basics)
+    /// for everything a character's own game has no clip for: crouching, jumping, blocking, the
+    /// crouching and jumping attacks, the blowback attack, the throw, flying and falling (FightGame.basics).
     /// </summary>
     [CreateAssetMenu(menuName = "ROE Fighter/Motion pack")]
     public class MotionPack : ScriptableObject
@@ -23,13 +25,23 @@ namespace RoeFighter.Fight
         [Serializable]
         public class Clip
         {
-            public string role;          // guard, walk, walk_back, run, or a strike's clip name
+            public string role;          // guard, walk, walk_back, run, ..., or a strike's clip name
             public AnimationClip clip;
             public bool loop;
         }
 
         /// <summary>The roles the fight plays besides the strikes; "guard" is required.</summary>
-        public static readonly string[] Roles = { "guard", "walk", "walk_back", "run" };
+        public static readonly string[] Roles =
+        {
+            "guard", "walk", "walk_back", "run",
+            "crouch", "takeoff", "jump", "fall", "landing",
+            "block", "block_hit", "crouch_block", "crouch_block_hit",
+            "hit_crouch", "hit_low", "hit_air", "hit_sweep", "knocked_back", "fall_down", "getup",
+            "dash", "backdash", "throw_confirm", "throw_react",
+        };
+
+        /// <summary>The roles that play as loops.</summary>
+        public static readonly string[] LoopRoles = { "guard", "walk", "walk_back", "run", "crouch", "block", "crouch_block" };
 
         public string title;             // shown when switched to
         public string source;            // where the motions come from

@@ -188,8 +188,38 @@ namespace RoeFighter.Fight
 
         [NonSerialized] public MotionPack motions;
 
+        /// <summary>
+        /// The basics pack of the side-view fight (FightGame.basics: crouching, jumping, blocking, the reactions, the crouching
+        /// and jumping strikes, the blowback attack, the throw): every clip of it she has no clip of that name for yet - her own
+        /// stance, walks, get-up and the motion pack's come first.  After UseMotions, before Init().
+        /// </summary>
+        public void AddMotions(MotionPack pack)
+        {
+            if (pack == null)
+                return;
+            int at = clips.FindLastIndex(c => !c.game) + 1;
+            foreach (var c in pack.clips.Where(c => c.clip != null))
+                if (!clips.Any(x => x.name == c.role))
+                    clips.Insert(at++, new NamedClip { name = c.role, clip = c.clip, loop = c.loop });
+        }
+
+        /// <summary>
+        /// In the air (a jump, launched by a blow): nothing stands on the floor - the hips keep their standing height over the
+        /// fighter's place, which the fight lifts along the jump; no sole is put down, no foot locked.  Set by the fight each step.
+        /// </summary>
+        [NonSerialized] public bool Airborne;
+        float hipRest;      // the hips' height over the floor in the stance (Init)
+
         /// <summary>This fighter's own strikes instead of the motion pack's (g04: Mai Shiranui's, from DOA6); null: the pack's.</summary>
         public MotionPack strikePack;
+
+        /// <summary>
+        /// Her skills that are ranged in her game (user 10-18 "inase有远程攻击也加上": Inase's thrown swords, skill 2; Kart's pistols;
+        /// Amano's super) - "skill2", or several as "skill1+skill2": their blows reach the opponent anywhere along the fight line,
+        /// unless she is in the air (a jump takes her over them).  Set when the scene is built (RoeFightScene -roeRanged).
+        /// </summary>
+        public string rangedSkills = "";
+        public bool IsRanged(string skill) => !string.IsNullOrEmpty(rangedSkills) && rangedSkills.Split('+', ',', ' ').Contains(skill);
 
         /// <summary>
         /// The guard she stands in between moves, in place of the motion pack's and her strike pack's (user 10-11 "luf还原ROE里的姿势吧":
@@ -283,6 +313,7 @@ namespace RoeFighter.Fight
             // the soles: how high the toe and ankle bones are when the game's stance stands on the floor
             hips = animator.GetBoneTransform(HumanBodyBones.Hips);
             head = animator.GetBoneTransform(HumanBodyBones.Head);
+            hipRest = hips != null ? hips.position.y - animator.transform.position.y : 0.9f;
             toes = new[] { animator.GetBoneTransform(HumanBodyBones.LeftToes), animator.GetBoneTransform(HumanBodyBones.RightToes) };
             feet = new[] { animator.GetBoneTransform(HumanBodyBones.LeftFoot), animator.GetBoneTransform(HumanBodyBones.RightFoot) };
             grounded = stance != null && toes.All(t => t != null) && feet.All(t => t != null);
@@ -685,10 +716,16 @@ namespace RoeFighter.Fight
             // the share of the game's hover that comes down (gameHover)
             float unhover = gameHover > 0f ? gameWeight * (1f - hoverWeight) : 0f;
             HoverDrop = 0f;
+            if (grounded && Airborne && hips != null)
+            {
+                // in the air (a jump, launched): nothing stands on the floor - the hips stay at their standing height over the
+                // fighter's place, which the fight lifts along the jump (Fighter.AirStep); the clip's legs do what they do
+                hips.position += Vector3.up * ((animator.transform.position.y + hipRest) - hips.position.y);
+            }
             // motion capture on the floor: retargeted onto these long-legged, high-heeled bodies it
             // floats 11-18 cm; the lowest sole goes down to the floor (the game's clips stay as they are,
             // but for a hover that comes down: gameHover)
-            if (grounded && (mocap > 0f || unhover > 0f))
+            else if (grounded && (mocap > 0f || unhover > 0f))
             {
                 // Flat feet (flatFeet): the motion capture leaves her feet in the bind pose's angle, pointed like a
                 // high heel - turned up about the ankle to her standing angle first.
@@ -723,7 +760,7 @@ namespace RoeFighter.Fight
             // bindFeet: her "game clips" are other bodies' too (UFE 2's), and retargeted onto her shoes the standing ones put
             // the soles 13-14 cm into the floor (the intro).  While she is upright her body comes up until the lowest sole is
             // on the floor - only up: a jump keeps its height, and lying down (head no higher than the hips) nothing changes.
-            if (bindFeet && grounded && gameWeight > 0f && head != null)
+            if (bindFeet && grounded && !Airborne && gameWeight > 0f && head != null)
             {
                 float sink = animator.transform.position.y - LowestSole();
                 var spine = head.position - hips.position;
@@ -731,7 +768,7 @@ namespace RoeFighter.Fight
                 if (sink > 0f)
                     hips.position += Vector3.up * (sink * upright);
             }
-            if (grounded && mocap > 0f)
+            if (grounded && mocap > 0f && !Airborne)
             {
                 // The other foot: retargeted onto these legs, a foot the actor had on the floor often
                 // hovers 1-3 cm above it.  A foot that stays put and is that close goes down to the
@@ -1051,7 +1088,7 @@ namespace RoeFighter.Fight
                 float tau = RoeHelperRig.TwistAngle(Quaternion.Inverse(l.upper.rotation) * hips.rotation * Quaternion.Inverse(rest), axis);
                 float roll = -tau;
                 Roll[i] = new Vector2(roll, roll);
-                if (rollKeep >= 1f || mocap <= 0f || !grounded || Mathf.Abs(roll) <= rollFrom)
+                if (rollKeep >= 1f || mocap <= 0f || !grounded || Airborne || Mathf.Abs(roll) <= rollFrom)
                     continue;
                 // a foot off the floor (above the other one's: a kick, a step) keeps its turn
                 float above = l.foot.position.y - lowest;
@@ -1083,7 +1120,7 @@ namespace RoeFighter.Fight
 
         void LockFeet(float dt, float mocap)
         {
-            if (legs == null || !grounded)
+            if (legs == null || !grounded || Airborne)
                 return;
             if (dt > 0f)
                 lockWeight = Mathf.MoveTowards(lockWeight, lockingFeet ? 1f : 0f, dt / 0.1f);

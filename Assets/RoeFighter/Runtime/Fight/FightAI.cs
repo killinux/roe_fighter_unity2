@@ -1,21 +1,31 @@
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RoeFighter.Fight
 {
     /// <summary>
-    /// A simple CPU opponent.  It thinks every 0.1-0.25 s (a human-like reaction time), keeps to
-    /// striking range, blocks or side-steps some of the strikes it sees coming, mixes the four
-    /// strikes by distance and uses its specials now and then, the super when its gauge is full.
-    /// Answers in screen terms like a player's pad.
+    /// A simple CPU opponent for the side-view fight.  It thinks every 0.1-0.25 s (a human-like reaction
+    /// time), keeps to striking range, blocks (crouching against lows) or rolls or hops away from strikes
+    /// it sees coming, answers a jump-in with a standing heavy, mixes standing and crouching strikes by
+    /// distance, throws up close, jumps in or runs in from afar and uses its specials now and then, the
+    /// super when it has a stock.  Longer actions (a run, a jump-in) are small plans played out step by
+    /// step.  Answers in screen terms like a player's pad.
     /// </summary>
     public class FightAI
     {
+        struct Planned
+        {
+            public int steps, fwd, up;
+            public string button;     // pressed on the first step of this part
+        }
+
         readonly System.Random rng;
+        readonly List<Planned> plan = new List<Planned>();
         float think;
         int fwd, up;
         string button;
         float holdFor;
+        bool airPressed;
 
         public FightAI(int seed)
         {
@@ -24,66 +34,159 @@ namespace RoeFighter.Fight
 
         float R() => (float)rng.NextDouble();
 
+        void Plan(int steps, int fwd, int up, string button = null) => plan.Add(new Planned { steps = steps, fwd = fwd, up = up, button = button });
+
+        /// <summary>The shortcut of a skill of hers that is ranged (FighterRig.rangedSkills), or null.</summary>
+        static string RangedSkill(Fighter me) => me.rig.IsRanged("skill1") ? "S1" : me.rig.IsRanged("skill2") ? "S2" : null;
+
         public FighterInput Decide(Fighter me, float dt, Vector3 camRight)
         {
             var input = new FighterInput();
-            var toFoe = me.foe.pos - me.pos;
-            toFoe.y = 0f;
-            float dist = toFoe.magnitude;
-            int screenSign = Vector3.Dot(toFoe, camRight) >= 0f ? 1 : -1;
+            var foe = me.foe;
+            float dist = me.Dist;
+            int screenSign = Vector3.Dot(me.game.axis * me.FoeSide, camRight) >= 0f ? 1 : -1;
             think -= dt;
             holdFor -= dt;
-            if (think <= 0f)
+            button = null;
+            if (!me.Airborne)
+                airPressed = false;
+            if (plan.Count > 0)
+            {
+                // a plan in progress: its current part
+                var p = plan[0];
+                fwd = p.fwd;
+                up = p.up;
+                button = p.button;
+                p.button = null;
+                p.steps--;
+                if (p.steps <= 0)
+                    plan.RemoveAt(0);
+                else
+                    plan[0] = p;
+                think = 0.05f;
+            }
+            else if (think <= 0f)
             {
                 think = 0.1f + R() * 0.15f;
-                button = null;
-                var foe = me.foe;
                 bool threatened = (foe.state == FightState.Attack && foe.move != null && dist < foe.move.reach + 0.9f)
-                               || (foe.state == FightState.Special && foe.t < 0.6f);
-                if (me.Neutral || me.state == FightState.Block)
+                               || (foe.state == FightState.Special && foe.t < 0.6f)
+                               || (foe.Airborne && foe.state != FightState.Launched && dist < 2.2f && foe.H > 0.5f);
+                if (me.Airborne)
                 {
-                    if (threatened && R() < 0.55f)
+                    // in the air: one attack when the opponent is in reach
+                    fwd = 0;
+                    up = 0;
+                    if (!airPressed && dist < 1.6f && foe.state != FightState.Down && R() < 0.7f)
                     {
-                        fwd = -1;           // block
-                        up = 0;
-                        holdFor = 0.35f;
+                        button = R() < 0.5f ? "C" : "D";
+                        airPressed = true;
                     }
-                    else if (threatened && R() < 0.25f)
+                }
+                else if (me.Neutral || me.state == FightState.Block || me.state == FightState.Land)
+                {
+                    if (threatened)
                     {
-                        fwd = 0;            // step out of the line
-                        up = R() < 0.5f ? 1 : -1;
-                        holdFor = 0.3f;
+                        float r = R();
+                        bool lowComing = foe.move != null && foe.move.Low;
+                        if (foe.Airborne && dist < 1.9f && r < 0.45f)
+                            button = R() < 0.6f ? "C" : "D";                 // anti-air: a standing heavy
+                        else if (r < 0.6f)
+                        {
+                            fwd = -1;                                        // block; crouch against lows (and sometimes anyway)
+                            up = lowComing || R() < 0.35f ? -1 : 0;
+                            holdFor = 0.35f;
+                        }
+                        else if (r < 0.72f && dist < 1.8f && me.rig.Has("dash"))
+                            button = "AB";                                   // roll through it
+                        else if (r < 0.82f)
+                        {
+                            // back-dash: two taps back
+                            Plan(2, -1, 0);
+                            Plan(2, 0, 0);
+                            Plan(3, -1, 0);
+                        }
+                        else if (r < 0.9f)
+                        {
+                            Plan(2, -1, 1);                                  // hop back
+                            Plan(12, -1, 0);
+                        }
+                        else
+                        {
+                            fwd = 0;
+                            up = 0;
+                        }
+                    }
+                    else if (foe.state == FightState.Down || foe.state == FightState.Getup || foe.state == FightState.Launched)
+                    {
+                        // she is down: keep a step away, ready
+                        fwd = dist > 1.9f ? 1 : dist < 1.3f ? -1 : 0;
+                        up = 0;
+                        if (foe.state == FightState.Launched && dist < 1.5f && foe.juggleHits < Fighter.JuggleLimit && R() < 0.3f)
+                            button = "C";                                    // a juggle
                     }
                     else if (holdFor <= 0f)
                     {
                         fwd = 0;
                         up = 0;
+                        float r = R();
                         // a skill that does not slide up to her (the supers, skill 2) is used only where its blows reach
-                        if (me.meter >= 100f && dist < me.SpecialReach("skill3") - 0.3f && R() < 0.25f)
+                        if (me.Stocks >= 1 && dist < me.SpecialReach("skill3") - 0.3f && R() < 0.2f)
                             button = "S3";
-                        else if (dist < 4.5f && R() < 0.06f)
+                        else if (dist > 2.2f && R() < 0.05f && RangedSkill(me) is string ranged)
+                            button = ranged;                                 // a ranged skill (thrown swords, pistols) from afar
+                        else if (dist < 3.6f && R() < 0.035f)
                         {
                             string pick = R() < 0.5f ? "S1" : "S2";
                             if (dist < me.SpecialReach(pick == "S1" ? "skill1" : "skill2") - 0.3f)
                                 button = pick;
                         }
-                        else if (dist < 1.25f && R() < 0.75f)
+                        else if (dist < 1.0f && foe.Throwable && R() < 0.14f)
                         {
-                            // in range: pick a strike that reaches
-                            float r = R();
-                            button = dist < 0.95f ? (r < 0.4f ? "A" : r < 0.65f ? "B" : r < 0.85f ? "C" : "D")
-                                                  : (r < 0.45f ? "D" : r < 0.8f ? "C" : "B");
+                            fwd = 1;                                         // a throw: forward + C
+                            button = "C";
                         }
-                        else if (dist > 1.1f)
+                        else if (dist < 1.3f && r < 0.72f)
                         {
-                            fwd = 1;
-                            if (R() < 0.12f)
+                            float k = R();
+                            if (k < 0.3f)
                             {
-                                fwd = 0;
-                                up = R() < 0.5f ? 1 : -1;
-                                holdFor = 0.4f;
+                                up = -1;                                     // a crouching strike (D sweeps)
+                                holdFor = 0.2f;
+                                float s = R();
+                                button = s < 0.4f ? "A" : s < 0.7f ? "B" : "D";
+                            }
+                            else if (k < 0.38f)
+                                button = "CD";                               // the blowback attack
+                            else
+                            {
+                                float s = R();
+                                button = dist < 0.95f ? (s < 0.4f ? "A" : s < 0.65f ? "B" : s < 0.85f ? "C" : "D")
+                                                      : (s < 0.45f ? "D" : s < 0.8f ? "C" : "B");
                             }
                         }
+                        else if (dist > 1.4f && dist < 3.0f && r < 0.12f)
+                        {
+                            // a jump-in: forward and up (held past the take-off: a full jump), the strike on the way down
+                            Plan(6, 1, 1);
+                            Plan(20, 1, 0);
+                            Plan(1, 1, 0, R() < 0.5f ? "C" : "D");
+                            Plan(20, 0, 0);
+                        }
+                        else if (dist > 1.4f && dist < 2.6f && r < 0.2f)
+                        {
+                            Plan(2, 1, 1);                                   // a hop in (up let go at once)
+                            Plan(14, 1, 0);
+                            Plan(1, 1, 0, "B");
+                            Plan(16, 0, 0);
+                        }
+                        else if (dist > 2.6f && r < 0.4f)
+                        {
+                            Plan(1, 1, 0);                                   // a run: forward, let go, forward
+                            Plan(1, 0, 0);
+                            Plan(Mathf.Clamp(Mathf.RoundToInt((dist - 1.3f) / Fighter.RunSpeed * 60f), 6, 60), 1, 0);
+                        }
+                        else if (dist > 1.15f)
+                            fwd = 1;
                         else if (R() < 0.3f)
                         {
                             fwd = -1;
@@ -91,11 +194,13 @@ namespace RoeFighter.Fight
                         }
                     }
                 }
-                else if (me.state == FightState.Attack && me.connected && R() < 0.5f)
+                else if (me.state == FightState.Attack && me.connected && me.move != null && me.move.stance == Stance.Stand && R() < 0.5f)
                 {
                     float r = R();
                     button = r < 0.5f ? "C" : "D";      // follow a connecting strike
                 }
+                else if (me.state == FightState.Crouch && holdFor <= 0f)
+                    up = 0;
             }
             input.x = fwd * screenSign;
             input.y = up;
@@ -103,21 +208,22 @@ namespace RoeFighter.Fight
             input.b = button == "B";
             input.c = button == "C";
             input.d = button == "D";
+            input.ab = button == "AB";
+            input.cd = button == "CD";
             input.s1 = button == "S1";
             input.s2 = button == "S2";
             input.s3 = button == "S3";
-            if (button != null)
-                button = null;      // a press, not a hold
+            button = null;      // a press, not a hold
             return input;
         }
     }
 
     /// <summary>
-    /// Keyboard and pad.  Player 1: A/D left/right, W/S step in/out of the screen, J K U I = A B C D,
-    /// 1 2 3 (the number row, as ROE's three skill buttons - user 10-11 "战斗按钮123，用luf在ROE里的三个招数") or
-    /// L O P = specials 1 2 3 (or 236/214/236236 + A or C).  Player 2: arrow keys, keypad 1 2 4 5 =
-    /// A B C D, keypad 3 6 9 = specials.  A pad works for player 1 (stick or d-pad, buttons 0-3,
-    /// shoulders 4/5 = specials 1/2, 6 = super).
+    /// Keyboard and pad.  Player 1: A/D left/right, W jump, S crouch, J K U I = A B C D, H = A+B (the roll), Y = C+D
+    /// (the blowback attack), 1 2 3 (the number row, as ROE's three skill buttons) or L O P = specials 1 2 3 (or
+    /// 236/214/236236 + A or C).  Player 2: arrow keys, keypad 1 2 4 5 = A B C D, keypad 7 = A+B, keypad 8 = C+D,
+    /// keypad 3 6 9 = specials.  A pad works for player 1 (stick or d-pad, buttons 0-3, shoulders 4/5 = specials 1/2,
+    /// 6 = super, 7 = A+B).
     /// </summary>
     public static class PlayerInput
     {
@@ -137,6 +243,8 @@ namespace RoeFighter.Fight
                 i.b = Input.GetKeyDown(KeyCode.K) || Input.GetKeyDown(KeyCode.JoystickButton1);
                 i.c = Input.GetKeyDown(KeyCode.U) || Input.GetKeyDown(KeyCode.JoystickButton2);
                 i.d = Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.JoystickButton3);
+                i.ab = Input.GetKeyDown(KeyCode.H) || Input.GetKeyDown(KeyCode.JoystickButton7);
+                i.cd = Input.GetKeyDown(KeyCode.Y);
                 i.s1 = Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.L) || Input.GetKeyDown(KeyCode.JoystickButton4);
                 i.s2 = Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.O) || Input.GetKeyDown(KeyCode.JoystickButton5);
                 i.s3 = Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.P) || Input.GetKeyDown(KeyCode.JoystickButton6);
@@ -149,6 +257,8 @@ namespace RoeFighter.Fight
                 i.b = Input.GetKeyDown(KeyCode.Keypad2);
                 i.c = Input.GetKeyDown(KeyCode.Keypad4);
                 i.d = Input.GetKeyDown(KeyCode.Keypad5);
+                i.ab = Input.GetKeyDown(KeyCode.Keypad7);
+                i.cd = Input.GetKeyDown(KeyCode.Keypad8);
                 i.s1 = Input.GetKeyDown(KeyCode.Keypad3);
                 i.s2 = Input.GetKeyDown(KeyCode.Keypad6);
                 i.s3 = Input.GetKeyDown(KeyCode.Keypad9);

@@ -1,4 +1,78 @@
-# ROE Fighter（Unity 版）
+# ROE Fighter 2（Unity 版，横版）
+
+用 Rise of Eros（ROE）、《死或生 6》、《Vindictus: Defying Fate》、《剑星》的角色做的**横版格斗游戏**，玩法照拳皇（The King of Fighters）：
+两人站在一条线上面对面，镜头从侧面拍，三人组队轮战，能跳、能蹲、按住后退防御、搓招放技能，能量槽分三格。引擎是 Unity 6000.4.12f1 + URP。
+2026-10-18 从 `roe_fighter_unity`（3D 版：能绕着对手转的格斗游戏，GitHub killinux/roe_fighter_unity，提交 03c0806）分出来：
+角色、素材流程、着色器、物理、爆衣、技能系统、动作包全部继承；重写的是战斗本身（`Assets/RoeFighter/Runtime/Fight/`）。
+玩法和按键见 [`docs/game-manual.md`](docs/game-manual.md)（exe 旁边有带截图的网页版 `out\ROEFighter2\游戏说明.html`）。
+
+## 横版（拳皇式）版本（2026-10-18）
+
+用户 10-18："切换到 roe_fighter_unity2，现有角色，把当前游戏改成类似拳皇的，横版对战的游戏"。
+
+### 和 3D 版的区别
+
+| 3D 版（roe_fighter_unity） | 横版（这里） |
+|---|---|
+| 两人在圆形场地里，能侧步绕着对手转；镜头站在两人连线的侧面，自己找不被遮挡的位置（`CameraRoom`） | 两人在一条线上（`FightGame.axis`），始终面对面，跳过对手头顶才换边；镜头固定在场地的一侧（`layout.normal`）正对这条线，跟着两人的中点左右移动、按两人距离拉近拉远（4.6–8.6 米）、有人跳起时抬高一点，画面不出场地边；两人最多隔 6.8 米（画面装得下） |
+| W / S 侧步 | W 跳（点一下小跳、按住大跳；蹲一下再跳是超级跳 / 加速小跳；跑着跳更远），S 蹲；朝对手双击是跑，反方向双击是后撤步 |
+| 按住后退防御，什么都能挡 | 站防挡中段和跳跃攻击，蹲防挡中段和下段；蹲着的脚（B、D）是下段，跳跃攻击是上段；投技挡不住 |
+| 站立 A B C D（每人自己的） | 还是每人自己的；另加全角色共用的蹲 A B C D（扫腿击倒）、空中 A B C D、C+D 吹飞（打飞倒地）、贴身前 / 后 + C 投技、A+B 前滚回避（滚的过程中打不到、能穿过对手） |
+| 受击、倒地（游戏自己的 clip） | 加上：蹲着挨打、下段受击、被打到空中（空中最多再追打两下，然后落地倒下）、吹飞、落地、起身；KO 在空中也先落地 |
+| 一对一三局两胜 | 三人组队轮战（输的一方换下一个，赢的留场、恢复一点体力），`-roeTeam 1` 或 F8 切回单挑 |
+| 能量槽满 100 放超必杀 | 三格（最多 300），超必杀用一格；投技涨 8 |
+| 原地放的技能打到游戏里敌人站的那一排那么远（`HitsAhead`） | ROE 里本来就是远程的技能（INASE 技能 2 甩飞剑、KART 红衣的双枪技能 1、2、AMANO 的超必杀；`-roeRanged a08=skill2,b10=skill1+skill2,m02=skill3`，`FighterRig.rangedSkills`）全场任何距离都打得到，对手跳在空中（0.5 米以上）时打空；电脑离得远时会放（用户 10-18 "inase有远程攻击也加上"） |
+| 爆衣：超必杀最后一下打中、K.O. | 再加 C+D 吹飞打中、投技摔出去各掉一段（用户 10-18 "爆衣效果也加上"） |
+| 身体碰撞：竖直胶囊 0.15–1.6 米 | 蹲着时胶囊只到 0.95 米：站着打头的拳从蹲着的人头上掠过 |
+
+### 代码
+
+- `Runtime/Fight/Fighter.cs`：横版状态机（Idle / Walk / Run / BackDash / Crouch / Jump / Land / Attack / Block / Hurt / Launched / Down / Getup / Special / Roll / Throw / Thrown / KO / Win / Lose）。
+  位置还是世界坐标 `pos`，沿线的位置 `U` 和高度 `H` 是它的两个投影；`facing` 是朝向（沿 axis 为 +1）。
+  跳：起跳蹲 4 帧，离地时 W 还按着就是大跳（向上 6.6 m/s），松了就是小跳（4.4）；重力 15 m/s²；前后跳 2.6 m/s，超级跳 7.7 / 3.4。双击要在 0.25 秒内。
+  空中攻击的判定、投技的抓取时刻、挡得住挡不住（`Blocks`）都在这里。
+- `Runtime/Fight/FightGame.cs`：比赛（组队 / 单挑）、输入换算（朝对手 = 前）、两人不重叠、命中判定（对手在角落时推开攻击方）、投技的两下、技能命中、特效、回合规则、侧视镜头、选人（组队按顺序选三个）。
+- `Runtime/Fight/FightAI.cs`：电脑对手，带小计划队列（跑过去、跳进来打）；`PlayerInput`：按键。
+- `Runtime/Fight/FightHud.cs`：HUD 加了两队头像（被打倒的变暗）、三格能量；选人界面列出两队。
+- `Runtime/Fight/MotionPack.cs`：角色（role）从 4 个扩到 24 个（蹲、起跳、跳、落、着地、站防 / 蹲防及其受击、蹲着受击、下段受击、空中受击、扫倒、击飞、落地、起身、前冲、后撤、投技双方）。
+- `Runtime/Fight/FighterRig.cs`：`AddMotions`（基础包补上角色没有的 clip）、`Airborne`（在空中时不把脚按到地上，髋保持站立高度，由格斗逻辑抬起整个人）。
+- `Editor/RoeMotionPacks.cs`：JSON 里 `roles` 按名字对应全部角色；招式多了 `stance`（stand / crouch / jump）、`kind`（blowback / throw）、`launch`。
+- `Editor/RoeFightScene.cs`：建场景时导入基础包 `kof_basics`、设镜头那一侧 `normal`、`-roeTeam`、`-roeP1 a,b,c`；录像、打包改名 `ROEFighter2`；原来量镜头空间的 `CameraRoom` 和镜头统计删了。
+
+### 基础动作包 `kof_basics`
+
+`tools/motionpacks/kof_basics.json`：UFE 2 演示角色 Robot Kyle 的人形动画（蹲、起跳、跳、落、着地、站防 / 蹲防、蹲着受击、下段受击、空中受击、扫倒、击飞、落地、起身、
+前冲、投技双方，蹲和空中的拳脚，挑空当 C+D），后撤步用 Mecanim Bot 的。每招的有效帧照 UFE 自己的招式表（`_work\ufe2\ufe_moves.tsv`，第 f 帧 = 片段的 f × 速度 / 60 秒）。
+所有角色共用；她自己有的 clip（站架、走、跑、起身）优先。
+
+### 怎么做
+
+```powershell
+cd E:\code\othercode\roe_fighter_unity2
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeCompileCheck.Run                      # 只看编译
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.Build -Graphics             # 建场景（导入 kof_basics、渲染头像）→ Assets\RoeFighter\Scenes\Fight_e23_steel_s02.unity
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.Record -Graphics -Extra '-roeP1','a08,g04,raven','-roeP2','eve_nikke06,kas,fio005','-roeSeconds','300','-roeOut','_work\fight_kof'
+python tools\make_video.py _work\fight_kof out\fight_kof_team.mp4
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.SelectDemo -Graphics -Extra '-roeOut','_work\select_kof'   # 选人界面录像（两队各选三个）
+python tools\make_video.py _work\select_kof out\select_kof.mp4
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.BuildPlayer -Graphics       # → out\ROEFighter2\ROEFighter2.exe（约 2.8 GB）
+.\tools\smoke_player.ps1 -Seconds 80 -Out _work\smoke                                           # 冒烟测试：启动 exe 直接开打（F1 电脑对电脑），每 10 秒截图，看 Player.log 有没有异常
+python tools\make_manual.py --shot fight=_work\fight_kof\frames\01200.jpg --shot select=_work\select_kof\frames\00300.jpg   # → out\ROEFighter2\游戏说明.html
+```
+
+每次改了 C# 只要重新编译（或直接 BuildPlayer）；改了动作包的 JSON 要先 `RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/kof_basics.json'` 再重建场景（导入会重做 .anim 资源，场景里的引用会失效）；
+改了 `FightGame` 字段的默认值（镜头、场地边距这些是存在场景里的）也要重建场景。
+
+### 已知问题 / 待定
+
+- 蹲、跳、防御、受击等共用动作是 Robot Kyle 的，套在这些女性身体上姿势偏硬；每个角色自己游戏里若有对应动作可以逐个替换（`tools/<game>/<id>.json` 的 `game` 表加同名 clip 即可覆盖）。
+- 回避（A+B）用的是 Kyle 的前冲，不是真正的翻滚。
+- 投技固定是"抓到身前再摔出去"一种，没有背摔；被抓的人在摔之前一直停在身前 0.85 米处。
+- 没有 MAX 模式、保险、超级取消。
+- 远程技能的判定是"全线命中"，但技能自带的光线 / 子弹特效还是游戏里的长度（约 3 米），只有命中特效出现在对手身上；没有做真正飞过去的弹道物体（可以做：把飞剑 / 子弹做成沿线飞行的对象，打中才算）。
+- 组队赛里留在场上的人恢复 8–20% 体力（照剩余时间），数值随手定的。
+
+## 原 3D 版本的说明（继承自 roe_fighter_unity，截至 2026-10-18；下面的命令里 `roe_fighter_unity` 在这个仓库里就是 `roe_fighter_unity2`）
 
 用 Rise of Eros（ROE）的角色做的 3D 格斗游戏。引擎是 Unity 6000.4.12f1 + URP。原计划用 UFE 2（Universal Fighting Engine 2）做对战框架，暂时买不了，所以先自己写了一套能玩的格斗逻辑（见"格斗"一节）；角色、动作、技能、特效这些数据以后换 UFE 也照样能用。
 角色：a08（Inase）、g04（Luf）首发，10-03 晚加了 b10（Kart）和 g05（Luf 的女神套装），10-04 加了《死或生 6》（DOA6）的霞（Kasumi），

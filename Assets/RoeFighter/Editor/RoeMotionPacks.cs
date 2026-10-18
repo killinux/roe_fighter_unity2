@@ -157,10 +157,15 @@ namespace RoeFighter.EditorTools
             public List<StrikeSpec> strikes = new List<StrikeSpec>();
         }
 
+        /// <summary>A clip per role of MotionPack.Roles (the field names are the roles); empty: the pack has none.</summary>
         [Serializable]
         public class RoleMap
         {
             public string guard, walk, walk_back, run;
+            public string crouch, takeoff, jump, fall, landing;
+            public string block, block_hit, crouch_block, crouch_block_hit;
+            public string hit_crouch, hit_low, hit_air, hit_sweep, knocked_back, fall_down, getup;
+            public string dash, backdash, throw_confirm, throw_react;
         }
 
         [Serializable]
@@ -180,6 +185,10 @@ namespace RoeFighter.EditorTools
                                                 // (strikes that step in: DOA's lunge 0.6-0.7 m, which would jump back at the end)
             public int damage;
             public bool knockdown;
+            public string stance;               // "stand" (default), "crouch", "jump": the stance the strike is thrown from (Move.stance)
+            public string kind;                 // "blowback" (the CD attack), "throw" (a grab: the hit window is when it grabs)
+            public bool launch;                 // the victim flies: up launchUp m/s, back launchBack m/s
+            public float launchUp, launchBack;
         }
 
         // light to heavy: A jab-like ... D kick-like (damage, hitstun, blockstun, push, radius, meter)
@@ -261,13 +270,19 @@ namespace RoeFighter.EditorTools
             pack.backSpeed = spec.backSpeed;
             pack.strikesOnly = spec.strikesOnly;
             pack.grip = spec.grip;
-            foreach (var (role, key) in new[] { ("guard", spec.roles.guard), ("walk", spec.roles.walk), ("walk_back", spec.roles.walk_back), ("run", spec.roles.run) })
+            // every role the fight knows (MotionPack.Roles; RoleMap's fields are named after them): loops loop, the others hold
+            // their last frame; every clip but the standing poses has its travel taken out (the fight moves the body)
+            foreach (var role in MotionPack.Roles)
             {
-                bool backwards = key != null && key.StartsWith("-");
+                string key = spec.roles != null ? typeof(RoleMap).GetField(role)?.GetValue(spec.roles) as string : null;
+                if (string.IsNullOrEmpty(key))
+                    continue;
+                bool backwards = key.StartsWith("-");
                 var src = Find(backwards ? key.Substring(1) : key);
                 if (src == null)
                     continue;
-                Add(pack, role, Copy(src, $"{outDir}/{role}.anim", loop: true, inPlace: role != "guard", reverse: backwards), true);
+                bool loop = MotionPack.LoopRoles.Contains(role);
+                Add(pack, role, Copy(src, $"{outDir}/{role}.anim", loop: loop, inPlace: role != "guard" && role != "crouch", reverse: backwards), loop);
             }
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(RoeHumanoid.FighterPath(string.IsNullOrEmpty(spec.measureOn) ? "a08" : spec.measureOn));
             foreach (var s in spec.strikes)
@@ -290,6 +305,15 @@ namespace RoeFighter.EditorTools
                                       s.hitstun > 0f ? s.hitstun : d.Item2, s.blockstun > 0f ? s.blockstun : d.Item3,
                                       s.push > 0f ? s.push : d.Item4, level, s.radius > 0f ? s.radius : d.Item5, s.meter > 0f ? s.meter : d.Item6);
                 move.knockdown = s.knockdown;
+                move.stance = string.IsNullOrEmpty(s.stance) ? Stance.Stand
+                            : s.stance.ToLowerInvariant() == "crouch" ? Stance.Crouch
+                            : s.stance.ToLowerInvariant() == "jump" || s.stance.ToLowerInvariant() == "air" ? Stance.Air : Stance.Stand;
+                move.kind = s.kind ?? "";
+                move.launch = s.launch;
+                if (s.launchUp > 0f)
+                    move.launchUp = s.launchUp;
+                if (s.launchBack > 0f)
+                    move.launchBack = s.launchBack;
                 if (s.inPlace)
                 {
                     move.travel = info.travel;

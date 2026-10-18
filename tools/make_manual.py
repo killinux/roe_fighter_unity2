@@ -1,5 +1,5 @@
 # The game manual as a page next to the exe (user 10-11 "写个游戏说明"): docs/game-manual.md (the text, in the repo) ->
-# out/ROEFighter/游戏说明.html with its pictures in out/ROEFighter/manual/ (game renders: not in the repo).
+# out/ROEFighter2/游戏说明.html with its pictures in out/ROEFighter2/manual/ (game renders: not in the repo).
 #   python tools\make_manual.py [--shot select=<frame.jpg>] [--shot fight=<frame.jpg>] [--open]
 # A picture is placed where the text has "<!-- 图: <file> | <caption> -->" and the file is in the pictures folder:
 # keys.png (the keyboard, drawn here), roster.jpg (the select cards, from Assets/RoeFighter/Generated/<id>/<id>_portrait.png)
@@ -17,7 +17,7 @@ FONT = r'C:\Windows\Fonts\msyh.ttc'
 FONT_BOLD = r'C:\Windows\Fonts\msyhbd.ttc'
 ROSTER = [('a08', 'INASE'), ('g04', 'LUF'), ('b10', 'KART'), ('g05', 'GODDESS LUF'), ('m02', 'AMANO'), ('b14', 'CRANE KART'),
           ('b14_outfit1', 'PINK CRANE KART'), ('kas', 'KASUMI'), ('kas011', 'KASUMI 海盗裙'), ('mai', 'MAI'), ('fio005', 'FIONA'),
-          ('eve09', 'EVE'), ('eve37', 'EVE 百褶裙'), ('eve_nikke06', 'EVE 粉色紧身衣')]
+          ('eve09', 'EVE'), ('eve37', 'EVE 百褶裙'), ('eve_nikke06', 'EVE 粉色紧身衣'), ('raven', 'RAVEN')]
 
 # ---- pictures
 
@@ -33,10 +33,11 @@ def draw_keys(path):
     font_leg = ImageFont.truetype(FONT, 20)
     used = {
         'F1': (FUNC, '1P 电脑'), 'F2': (FUNC, '2P 电脑'), 'F3': (FUNC, '动作包'), 'F4': (FUNC, '物理'),
-        'F5': (FUNC, '裙子'), 'F6': (FUNC, '爆衣'), 'F7': (FUNC, '回选人'), 'F8': (FUNC, '镜头'),
+        'F5': (FUNC, '裙子'), 'F6': (FUNC, '爆衣'), 'F7': (FUNC, '回选人'), 'F8': (FUNC, '组队'),
         '1': (SKILL, '技能 1'), '2': (SKILL, '技能 2'), '3': (SKILL, '超必杀'),
-        'W': (MOVE, '侧步 里'), 'A': (MOVE, '左'), 'S': (MOVE, '侧步 外'), 'D': (MOVE, '右'),
+        'W': (MOVE, '跳'), 'A': (MOVE, '左'), 'S': (MOVE, '蹲'), 'D': (MOVE, '右'),
         'J': (ATTACK, 'A 攻击'), 'K': (ATTACK, 'B 攻击'), 'U': (ATTACK, 'C 攻击'), 'I': (ATTACK, 'D 攻击'),
+        'H': (ATTACK, '回避'), 'Y': (ATTACK, '吹飞'),
         'L': (SKILL, '技能 1'), 'O': (SKILL, '技能 2'), 'P': (SKILL, '超必杀'),
         'Enter': (OK, '确认'), 'Space': (OK, '确认'), 'Esc': (FUNC, '退回'),
     }
@@ -64,7 +65,7 @@ def draw_keys(path):
             d.rounded_rectangle((x0, y0, x1, y1), 8, fill=colour, outline=tuple(max(0, c - 40) for c in colour), width=2)
             d.text((x0 + 8, y0 + 4), name, font=font_key if len(name) <= 3 else ImageFont.truetype(FONT_BOLD, 20), fill='white')
             d.text((x0 + 8, y1 - 22), label, font=font_lab, fill='white')
-    legend = [(MOVE, '移动 / 侧步（按住远离对手的方向 = 防御）'), (ATTACK, '普通攻击'), (SKILL, '技能'), (OK, '选人确认'), (FUNC, '功能键')]
+    legend = [(MOVE, '移动 / 跳 / 蹲（按住远离对手的方向 = 防御）'), (ATTACK, '普通攻击'), (SKILL, '技能'), (OK, '选人确认'), (FUNC, '功能键')]
     x = ox
     for colour, text in legend:
         d.rounded_rectangle((x, height - 52, x + 26, height - 26), 5, fill=colour)
@@ -230,7 +231,7 @@ figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--md', default=os.path.join(PROJECT, 'docs', 'game-manual.md'))
-    ap.add_argument('--out', default=os.path.join(PROJECT, 'out', 'ROEFighter', '游戏说明.html'))
+    ap.add_argument('--out', default=os.path.join(PROJECT, 'out', 'ROEFighter2', '游戏说明.html'))
     ap.add_argument('--shot', action='append', default=[], help='name=path of a screenshot (select, fight, skill)')
     ap.add_argument('--open', action='store_true', help='open the page in the browser')
     a = ap.parse_args()

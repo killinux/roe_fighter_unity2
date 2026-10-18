@@ -63,13 +63,86 @@ python tools\make_manual.py --shot fight=_work\fight_kof\frames\01200.jpg --shot
 每次改了 C# 只要重新编译（或直接 BuildPlayer）；改了动作包的 JSON 要先 `RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/kof_basics.json'` 再重建场景（导入会重做 .anim 资源，场景里的引用会失效）；
 改了 `FightGame` 字段的默认值（镜头、场地边距这些是存在场景里的）也要重建场景。
 
+### 远程技能做成真正的弹道、MAX、取消、各角色自己的动作（10-18 晚）
+
+用户 10-18："爆衣效果也加上，inase有远程攻击也加上"，然后对"还没做的"说"做"、"可以再做的都做了"。
+
+**远程技能 = 真正飞过去的东西**（`RangedSkill`，`Fighter.StepRanged`，`FightGame.StepProjectiles`）
+
+- 哪些算：不冲刺、命中特效放在 3 米以外（ROE 里敌人站的那一排）的技能——建场景时自动找（`RoeFightScene.Ranged`），12 个：
+  a08 技能 2 / 超必杀、b10 技能 1 / 2、b14 和 b14_outfit1 技能 2 / 超必杀、g04 技能 2 / 超必杀、g05 技能 1、m02 超必杀。
+- 三种：
+  - **投掷**：建场景时让她的高模把这个技能的 clip 播一遍（每 1/30 秒），武器骨离髋 1.6 米以上、离开了她的手（离两只手都超过 0.4 米）、而且飞到游戏里出伤害那一排的六成以上，
+    就是"武器真的飞出去"：记下出手（离手 0.3 米）、最远（游戏里飞多远、哪一刻）、收回的时刻，和武器网格的中心。放招时，出手那一刻锁定对手的距离 A，从手往外的那一段按 (A − 0.9)/(游戏距离 − 0.9) 缩放
+    （高模的武器骨，和游戏隐藏低模上挂特效的武器骨一起），所以剑 / 斧头正好飞到对手那里再按游戏的时间飞回来（沿线的位置直接按建场景时记下的轨迹 `RangedSkill.path` 放——每 1/30 秒一个距离——只保留武器自己的高度和旋转：对战里武器的姿势和采样时不完全一样，Kart 的斧头会短 1 米、Inase 的剑会早到）；每步检查武器中心有没有碰到对手的身体
+    （沿线距离 + 高度在她身体范围内，蹲着矮一截），碰到才算第一下打中，后面几下按游戏里的间隔跟上；到游戏里武器最远的那一刻（再加 0.1 秒）还没碰到（翻滚无敌、走开）就打空
+    ——不按"武器骨往回走了"判断，旋转的斧头骨骼一路上来回摆。
+    Inase 技能 2（剑在 2.2 秒左右离手）、Kart 技能 1（斧头）。Inase 的超必杀有一把剑飞到身前 2 米，但伤害落在 9.5 米外（光之剑落下），算定点。
+    Inase 的巨剑是竖着整把翻滚着飞的，跳不过去，要翻滚穿过去或者躲开。
+  - **射击**：`-roeShots b10=skill2`（Kart 的双枪）：每一下伤害是一颗子弹（`Projectile`，26 m/s，从右手前 0.25 米出发、胸口高度），在游戏的命中时刻之前
+    (6 米 / 速度) 发射，沿着线飞，每步分段检查，碰到对手就打（能挡），飞出场就消失。子弹的样子是建场景时生成的一条发光的短条（`Generated/fx/tracer.prefab`，
+    UFE 粒子用的旧版加色着色器 + UFE 的软光贴图，平面朝着侧面的镜头）。
+  - **定点**：其余的：第一下前 0.6 秒锁定对手的位置，每一下打下去时她还在 0.9 米内、没跳到 0.5 米以上才算中。
+  - 游戏放在远处的特效（时间轴挂在 `VfxAnchor` 下的锚点）也按同样的比例挪到实际打到的地方；打到目标身上的特效（技能表的 target spawn）改成打中那一刻才出。
+  - 相撞：两边的子弹、子弹和飞出去的武器、两把武器相撞，一起作废（火花）。子弹和剑相向而飞，一步能接近 1 米，所以除了"现在相距 0.7 米内"，
+    "这一步里互相穿过"也算（`FightGame.Meet`）。
+- 电脑：离得远会放远程技能；看到飞来的东西会跳、防或滚。
+
+**MAX 模式、取消、防御反击、超级取消、背摔**（`Fighter`）
+
+- MAX（B+C、G 键、小键盘 0、手柄 8 号）：一格能量，10 秒，伤害 ×1.2（`DamageScale`），身上的光是生成的粒子（`Generated/fx/max_aura.prefab`，由 `FightGame.StepAuras`
+  手动推进，录像里也有）；MAX 中放超必杀不耗格、再 ×1.3、MAX 结束。普通攻击打中后可以取消进 MAX。
+- 取消：打中或被挡住的普通攻击，从取消点起可以接普通攻击、吹飞、技能、超必杀；取消出来的技能 / 超必杀把对手锁住到它第一下打到（`Fighter.HoldFor`）。
+- 超级取消：技能 1 / 2 打中或被挡后、放完前，按超必杀：一格（MAX 中免费）。
+- 防御反击（保险）：防御硬直中 A+B 翻滚、C+D 吹飞（伤害减半、0.3 秒无敌、往前垫半步，被挡的人就在跟前），各一格。
+- 输入缓冲：命中 / 被挡时的顿帧里按的键记下来，顿帧结束的第一步生效（`FightGame.buffered`）；没有它，取消、超级取消、防御反击这些"打中那一刻按"的操作都会被吞掉。
+- 背摔：后 + C，她转身，对手在 0.3 秒里被带到另一边再摔出去。
+- 电脑：普通攻击打中后偶尔取消接技能 / 超必杀 / MAX，技能打中后 40% 超级取消，防御时有能量 10% 回避、10% 吹飞反击；两格能量时偶尔开 MAX，一格时贴近对手才开（一局通常只攒到一格多：10-18 的电脑对战里六人最多 88–117）。
+
+**各角色自己的动作**
+
+- 新角色（`MotionPack.Roles`）：`roll`（A+B）、`jump_arc` / `jump_arc_fwd`（一整段的空翻跳，按在空中的时间播完，不再分上升 / 下落）；动作包和定义里的片段可以写成 `名字@起-止` 截一段。
+- 共用包 `kof_basics`：下蹲、站防 / 蹲防和防御硬直、后撤步换成 DOA6 霞的（KAS00001、00284 / 00357、00285 / 00359、00010），跳（起跳、上升、下落、落地）、
+  翻滚（她的锁定前闪避）、空中受击换成剑星 Eve 的；其余仍是 Robot Kyle。
+- 各自的（她自己游戏里有的才换）：
+  - Eve 三套（`sb_eve09.json` 等的 roles）：防御 `Proto_Guard_idle`、防御受击 `Proto_Guard_Hit_Back`、后撤 `Proto_Lockon_Evade_Backward`（后空翻）；
+  - Fiona（`vdf_fiona.json`）：起跳 / 上升 `Battle_Idle_Jump_Begin`、下落 `_Falling`、落地 `_End_Light`、防御 `HeavyStander_During`（举盾）、防御受击 `Guard_Hit`；
+  - 霞两套（`tools/doa/kas.json`、`kas011.json` 的 game 表）：DOA6 的下蹲、站防 / 蹲防和硬直、后撤、前空翻跳（KAS00274 的空中部分）、起身 CMN00370；
+  - 舞（`tools/doa/mai.json`）：DOA6 的 MAI00001 下蹲、00070 / 00071 站防 / 蹲防、00080 / 00081 硬直、00061 后撤、00160 原地跳、00150 前空翻跳；
+    她的动作编号是新转的（`g2a_bvh.py`），按髋高、位移、离地帧数（`tools/bvh_stats.py`）和火柴人图认出来的；
+  - 渡鸦（`sb_raven.json`）：后撤用她的 `M_Raven_EvadeBack`。
+- Eve 的 `Proto_Battle_*_Roll_*` 其实是跑步时的侧倾，不是翻滚；真正的翻滚是锁定前闪避。
+- 挑这些片段时用的调查包：`tools/motionpacks/kof_survey.json`（Eve / Fiona 的候选跳、防、滚）、`kof_survey_mai.json`（舞的候选），把候选片段当成招式导入、出对比图看，游戏里不用。
+
+**录像**
+
+```powershell
+# 导入（顺序有关：kof_basics 引用霞和 Eve 的片段）
+python tools\sb_anims.py export --only "^(Proto_Lockon_Jump_Start|Proto_Lockon_Jump_End|Proto_Fall_Battle|Proto_Guard_idle|Proto_Guard_Hit_Back|Proto_Lockon_Evade_Backward|Proto_Lockon_Evade_Forward|Result_Hit_Air_Light_Fall_Bw)$"
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.SbAnims.Import -Graphics -Extra '-roeSb','eve09','-roeOnly','<同上的正则>'
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.VdfAnims.Import -Graphics -Extra '-roeVdf','fio005','-roeOnly','Fiona_Battle_(Idle|Walk)_Jump_(Begin|Falling|End_Light)$'
+python E:\code\othercode\ripper_tpose\scripts\doa6\g2a_bvh.py --g1m E:\game_export\DOA6\MaiShiranui\g1m_src\MAI_COS_004.g1m --out _work\mocap\doa6_mai <MAI00001 00061 00070 00071 00080 00081 00150 00160 的 .g1a>
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/doa6_kas.json,tools/motionpacks/doa6_mai.json'
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/sb_eve09.json,tools/motionpacks/sb_eve37.json,tools/motionpacks/sb_eve.json,tools/motionpacks/vdf_fiona.json,tools/motionpacks/sb_raven.json'
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/kof_basics.json'
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.Build -Graphics
+# 三段演示（脚本按键，字幕是中文，用 Python 烧进画面）
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeKofDemo.Run -Graphics -Extra '-roeDemo','ranged','-roeOut','_work\demo_ranged'
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeKofDemo.Run -Graphics -Extra '-roeDemo','system','-roeOut','_work\demo_system'
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeKofDemo.Run -Graphics -Extra '-roeDemo','moves','-roeOut','_work\demo_moves'
+python tools\caption_frames.py _work\demo_ranged; python tools\make_video.py _work\demo_ranged out\kof_ranged_demo.mp4
+# （system、moves 同样：out\kof_system_demo.mp4、out\kof_moves_demo.mp4）
+# 电脑对电脑的组队赛：日志最后一行 "fight events" 列出用到的 MAX、取消、防御反击、远程技能的命中 / 打空、相撞
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.Record -Graphics -Extra '-roeP1','a08,b10,mai','-roeP2','eve_nikke06,m02,kas','-roeSeconds','300','-roeOut','_work\fight_kof6'
+python tools\make_video.py _work\fight_kof6 out\fight_kof_team_round2.mp4
+```
+
 ### 已知问题 / 待定
 
-- 蹲、跳、防御、受击等共用动作是 Robot Kyle 的，套在这些女性身体上姿势偏硬；每个角色自己游戏里若有对应动作可以逐个替换（`tools/<game>/<id>.json` 的 `game` 表加同名 clip 即可覆盖）。
-- 回避（A+B）用的是 Kyle 的前冲，不是真正的翻滚。
-- 投技固定是"抓到身前再摔出去"一种，没有背摔；被抓的人在摔之前一直停在身前 0.85 米处。
-- 没有 MAX 模式、保险、超级取消。
-- 远程技能的判定是"全线命中"，但技能自带的光线 / 子弹特效还是游戏里的长度（约 3 米），只有命中特效出现在对手身上；没有做真正飞过去的弹道物体（可以做：把飞剑 / 子弹做成沿线飞行的对象，打中才算）。
+- 共用的蹲击、跳击、吹飞、投技、受击、起身还是 Robot Kyle 的；ROE 角色游戏里没有这些动作。
+- 投掷的命中按"武器中心或武器骨碰到身体"算，武器很长时（Inase 的巨剑）只有剑尖擦到不算；子弹固定从右手出发。
+- 定点技能的"锁定"时刻统一是第一下前 0.6 秒，不是每个技能各自的出手时刻。
+- 舞的下蹲（DOA6 MAI00001）非常低，套在别的身体上像跪着；只给舞自己用。
 - 组队赛里留在场上的人恢复 8–20% 体力（照剩余时间），数值随手定的。
 
 ## 原 3D 版本的说明（继承自 roe_fighter_unity，截至 2026-10-18；下面的命令里 `roe_fighter_unity` 在这个仓库里就是 `roe_fighter_unity2`）

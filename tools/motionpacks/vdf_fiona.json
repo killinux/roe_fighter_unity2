@@ -11,7 +11,13 @@
   "guard": "Assets/VDF/fio005/anims/AS_pc_fiona_battle_idle.anim",
   "walk": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Loop.anim",
   "walk_back": "-Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Loop.anim",
-  "run": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Run_Loop.anim"
+  "run": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Run_Loop.anim",
+  "takeoff": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Idle_Jump_Begin.anim@0-0.25",
+  "jump": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Idle_Jump_Begin.anim@0.3",
+  "fall": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Idle_Jump_Falling.anim",
+  "landing": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Idle_Jump_End_Light.anim@0-0.5",
+  "block": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_HeavyStander_During.anim",
+  "block_hit": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Hit.anim"
  },
  "strikes": [
   {

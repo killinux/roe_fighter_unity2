@@ -35,6 +35,42 @@
   {
    "name": "skill_03",
    "clip": "mai_02002"
+  },
+  {
+   "name": "crouch",
+   "clip": "mai_00001"
+  },
+  {
+   "name": "block",
+   "clip": "mai_00070"
+  },
+  {
+   "name": "block_hit",
+   "clip": "mai_00080"
+  },
+  {
+   "name": "crouch_block",
+   "clip": "mai_00071"
+  },
+  {
+   "name": "crouch_block_hit",
+   "clip": "mai_00081"
+  },
+  {
+   "name": "backdash",
+   "clip": "mai_00061"
+  },
+  {
+   "name": "jump_arc",
+   "clip": "mai_00160@0.06-0.70"
+  },
+  {
+   "name": "jump_arc_fwd",
+   "clip": "mai_00150@0.08-0.52"
+  },
+  {
+   "name": "getup",
+   "clip": "cmn_00370"
   }
  ],
  "skills": [

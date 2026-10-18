@@ -107,6 +107,50 @@
     "name": "kas_07020_win",
     "file": "KAS07020_WIN.bvh",
     "face": "0"
+   },
+   {
+    "name": "kas_00001",
+    "file": "KAS00001_KAS.bvh",
+    "loop": true,
+    "minCycle": 0.5,
+    "maxCycle": 1.06,
+    "face": "0"
+   },
+   {
+    "name": "kas_00284",
+    "file": "KAS00284_KAS.bvh",
+    "loop": true,
+    "minCycle": 0.3,
+    "maxCycle": 0.5,
+    "face": "0"
+   },
+   {
+    "name": "kas_00285",
+    "file": "KAS00285_KAS.bvh",
+    "loop": true,
+    "minCycle": 0.3,
+    "maxCycle": 0.5,
+    "face": "0"
+   },
+   {
+    "name": "kas_00357",
+    "file": "KAS00357_KAS.bvh",
+    "face": "0"
+   },
+   {
+    "name": "kas_00359",
+    "file": "KAS00359_KAS.bvh",
+    "face": "0"
+   },
+   {
+    "name": "kas_00010",
+    "file": "KAS00010_KAS.bvh",
+    "face": "0"
+   },
+   {
+    "name": "kas_00274",
+    "file": "KAS00274_KAS.bvh",
+    "face": "0"
    }
   ]
  },

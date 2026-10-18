@@ -13,7 +13,8 @@
   "guard": "Assets/SB/raven/anims/M_Raven_BattleIdle01.anim",
   "walk": "Assets/SB/raven/anims/M_Raven_Caution_Fw.anim",
   "walk_back": "Assets/SB/raven/anims/M_Raven_Caution_Bw.anim",
-  "run": "Assets/SB/raven/anims/M_Raven_Run_L.anim"
+  "run": "Assets/SB/raven/anims/M_Raven_Run_L.anim",
+  "backdash": "Assets/SB/raven/anims/M_Raven_EvadeBack.anim@0-0.6"
  },
  "strikes": [
   {

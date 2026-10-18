@@ -67,7 +67,12 @@ namespace RoeFighter.EditorTools
         public const string DefaultRoster = "a08,g04,b10,g05,m02,b14,b14_outfit1,kas,kas011,fio005,eve09,eve37,eve_nikke06,raven,mai";
 
         public static string PortraitPath(string id) => $"{RoeFighterBuilder.OutDir}/{id}/{id}_portrait.png";
-        static readonly HashSet<string> Loops = new HashSet<string> { "guard", "walk", "walk_back", "side_left", "side_right", "run", "rip", "idle_01", "idle_02" };
+        static readonly HashSet<string> Loops = new HashSet<string>
+        {
+            "guard", "walk", "walk_back", "side_left", "side_right", "run", "rip", "idle_01", "idle_02", "crouch", "block", "crouch_block", "fall",
+        };
+        /// <summary>A fighter's own clips the fight moves her through itself: their travel taken out.</summary>
+        static readonly HashSet<string> Moving = new HashSet<string> { "jump_arc", "jump_arc_fwd", "jump", "backdash", "roll", "dash", "takeoff", "landing" };
 
         [MenuItem("ROE Fighter/Fight/Build fight scene")]
         public static void Build()
@@ -126,15 +131,20 @@ namespace RoeFighter.EditorTools
             Directory.CreateDirectory($"{DoaFighter.Dir(id)}/clips");
             foreach (var g in def.game)
             {
-                var src = DoaFighter.PackClip(def.pack, g.clip);
+                // "segment@0.15-0.62": that part of it (a DOA6 somersault cut to the part in the air)
+                var (segment, from, to) = RoeMotionPacks.SplitRange(g.clip);
+                var src = DoaFighter.PackClip(def.pack, segment);
                 if (src == null)
                 {
                     Debug.LogWarning($"[ROE] {id}: no clip {g.clip} for {g.name} in {def.pack}");
                     continue;
                 }
+                if (from > 0f || to > 0f)
+                    src = RoeMotionPacks.Trim(src, from, to);
                 bool skill = g.name.StartsWith("skill_");
+                bool moving = Moving.Contains(g.name);      // the fight moves her itself (a jump's arc, a back dash, the roll)
                 bool loop = Loops.Contains(g.name);
-                var clip = RoeMotionPacks.Copy(src, $"{DoaFighter.Dir(id)}/clips/{g.name}.anim", loop, inPlace: skill);
+                var clip = RoeMotionPacks.Copy(src, $"{DoaFighter.Dir(id)}/clips/{g.name}.anim", loop, inPlace: skill || moving);
                 clips[g.name] = clip;
                 rig.clips.Add(new FighterRig.NamedClip { name = g.name, clip = clip, loop = loop, game = true });
             }
@@ -278,6 +288,9 @@ namespace RoeFighter.EditorTools
             game.basics = OwnStrikes(RoeCapture.Arg("-roeBasics", "kof_basics"));
             if (game.basics == null)
                 Debug.LogWarning("[ROE] no basics pack: nobody can crouch, jump or block low");
+            // a bullet's streak and MAX mode's aura
+            game.tracerPrefab = Tracer();
+            game.maxAuraPrefab = MaxAura();
             foreach (var rig in roster)
             {
                 rig.UseMotions(game.Pack);
@@ -610,10 +623,9 @@ namespace RoeFighter.EditorTools
             }
             if (Setting(Table("-roeWeaponScale", "g04=0.7"), c.id, out var size))
                 rig.weaponScale = float.Parse(size, CultureInfo.InvariantCulture);
-            // her skills that are ranged in her game (user 10-18 "inase有远程攻击也加上"): their blows reach the opponent anywhere along
-            // the fight line (FighterRig.rangedSkills; several as skill1+skill2) - Inase's thrown swords, Kart's pistols, Amano's super
-            if (Setting(Table("-roeRanged", "a08=skill2,b10=skill1+skill2,m02=skill3"), c.id, out var ranged))
-                rig.rangedSkills = ranged;
+            // her skills that hit from a distance in her game (user 10-18 "inase有远程攻击也加上", then real projectiles): found and
+            // measured on her model (FighterRig.ranged, RangedSkill)
+            rig.ranged = Ranged(rig, model, sheet, c.id, out string rangedNote);
             // heels or flat feet (user 10-03: "有的角色是有高跟鞋的，有的角色是没有的，得区分一下"): measured on her own standing
             // clips (RoeFeet); -roeFeet g05=flat,b10=heels overrides
             var feetKind = RoeFeet.Measure(c.id);
@@ -663,9 +675,238 @@ namespace RoeFighter.EditorTools
                       $"{rig.clips.Count} clips, {rig.weaponRenderers.Length} weapon renderers, {rig.sounds.Count} sounds, " +
                       $"clothes burst {(rig.burst != null ? rig.burst.Report() : "none")}, {showNote}, " +
                       $"own strikes {(rig.strikePack != null ? $"{rig.strikePack.name} ({string.Join(" ", rig.strikePack.strikes.Select(m => $"{m.button} {m.name}"))})" : "none")}, " +
-                      $"{guardNote}, weapon size {rig.weaponScale:F2}, ranged skills {(string.IsNullOrEmpty(rig.rangedSkills) ? "none" : rig.rangedSkills)}{feetNote} " +
+                      $"{guardNote}, weapon size {rig.weaponScale:F2}, ranged skills {rangedNote}{feetNote} " +
                       $"(hit sound {(hit.p != null ? Path.GetFileName(hit.p) : "none")}; sfx: {string.Join(" ", c.sfx.Take(12).Select(Path.GetFileNameWithoutExtension))})");
             return rig;
+        }
+
+        /// <summary>
+        /// Her skills that hit from a distance in her game (FighterRig.ranged, RangedSkill): every skill that does not slide up
+        /// to the opponent and puts its hit effects 3 m or more ahead (the game's enemy line).  -roeShots names the ones that
+        /// fire bullets (default b10=skill2, Kart's pistols).  The others: her model plays the skill's clip, sampled every 1/30 s
+        /// - a weapon bone that gets 1.6 m or more ahead of her hips, out of her hands, makes it a throw (when it leaves her hand:
+        /// 0.3 m past it; how far it gets; when it is back), else it is placed (the spot fixed 0.6 s before the first blow; a
+        /// weapon swung far ahead in her hand - Inase's super - stays in it).  Returns the list and a note for the log.
+        /// </summary>
+        static List<RangedSkill> Ranged(FighterRig rig, GameObject model, RoeSkillSheet sheet, string id, out string note)
+        {
+            var list = new List<RangedSkill>();
+            var notes = new List<string>();
+            var shots = Setting(Table("-roeShots", "b10=skill2"), id, out var shotArg) ? shotArg.Split('+') : new string[0];
+            var animator = model.GetComponent<Animator>();
+            var roots = FighterRig.WeaponRoots(animator, rig.weaponRenderers);
+            var hipsBone = animator.GetBoneTransform(HumanBodyBones.Hips);
+            var hands = new[] { animator.GetBoneTransform(HumanBodyBones.LeftHand), animator.GetBoneTransform(HumanBodyBones.RightHand) }
+                .Where(h => h != null).ToArray();
+            foreach (var name in new[] { "skill1", "skill2", "skill3" })
+            {
+                var action = sheet.Find(name);
+                if (action == null || action.Dashes || action.HitsAhead < 3f || action.Blows.Count == 0)
+                    continue;
+                var r = new RangedSkill { skill = name, anchorReach = action.HitsAhead, kind = shots.Contains(name) ? "shot" : "place" };
+                float first = action.Blows[0].time;
+                r.lockAt = Mathf.Max(0.15f, first - 0.6f);
+                var clip = rig.clips.FirstOrDefault(x => x.name == "skill_0" + name.Substring(5))?.clip;
+                float clipIn = action.Body != null ? action.Body.clipIn : 0f;
+                if (clip != null && roots.Length > 0 && !r.IsShot && hipsBone != null)
+                {
+                    // each weapon bone's distance ahead of her root (the fighter's frame: +Z), and how far beyond her hips.  Posing
+                    // here moves the model's own root with the clip's root motion, which the fight's Animator leaves out: taken off
+                    var track = roots.ToDictionary(w => w, w => new List<(float t, float z, float beyond, float hand)>());
+                    var modelRest = model.transform.position;
+                    float drift = 0f;
+                    for (float t = 0f; t <= clip.length - clipIn + 1e-4f; t += 1f / 30f)
+                    {
+                        RoeCapture.Pose(model, clip, clipIn + t);
+                        var off = model.transform.position - modelRest;
+                        drift = Mathf.Max(drift, off.magnitude);
+                        float hz = rig.transform.InverseTransformPoint(hipsBone.position - off).z;
+                        foreach (var w in roots)
+                        {
+                            float z = rig.transform.InverseTransformPoint(w.position - off).z;
+                            float hand = hands.Length > 0 ? hands.Min(h => Vector3.Distance(h.position, w.position)) : 9f;
+                            track[w].Add((t, z, z - hz, hand));
+                        }
+                    }
+                    RoeCapture.EndPosing();
+                    model.transform.position = modelRest;
+                    if (drift > 0.05f)
+                        notes.Add($"{name}: the clip moves her model's root up to {drift:F2} m (measured without it)");
+                    var best = track.OrderByDescending(kv => kv.Value.Max(s => s.beyond)).First();
+                    var samples = best.Value;
+                    int far = samples.FindIndex(s => s.beyond == samples.Max(x => x.beyond));
+                    // thrown: well ahead of her hips, out of her hands, and out to where the game's blows land (Inase's super
+                    // sends a sword 2 m ahead while its blows land 9.5 m out: the light swords fall there, it is placed)
+                    if (samples[far].beyond >= 1.6f && samples[far].hand > 0.4f && samples[far].z >= 0.6f * action.HitsAhead)
+                    {
+                        // the flight: from its farthest moment back as long as it was moving out, and on as long as it comes back,
+                        // down to a metre past her hips (a swing of the wind-up that reaches out never counts: Inase's greatsword
+                        // is 1.2 m ahead at 0.5 s and leaves her hands at 1.9)
+                        int release = far, back = far;
+                        while (release > 0 && samples[release - 1].beyond < samples[release].beyond + 0.05f && samples[release - 1].beyond > 1.0f)
+                            release--;
+                        while (back < samples.Count - 1 && samples[back + 1].beyond < samples[back].beyond + 0.05f && samples[back + 1].beyond > 1.0f)
+                            back++;
+                        r.kind = "throw";
+                        r.weapon = best.Key.name;
+                        r.reach = samples[far].z;
+                        int from = Mathf.Max(0, release - 1), to = Mathf.Min(samples.Count - 1, back + 1);
+                        r.release = samples[from].t;
+                        r.farAt = samples[far].t;
+                        r.back = samples[to].t;
+                        // its whole flight, for the fight to follow (the fight's own pose of the weapon drifts from the clip's:
+                        // Kart's axe got 1 m short, Inase's sword out too early)
+                        r.path = samples.Skip(from).Take(to - from + 1).Select(x => x.z).ToArray();
+                        // the middle of the weapon: its meshes' bounds, in the bone's frame
+                        var bounds = new Bounds();
+                        bool any = false;
+                        foreach (var ren in rig.weaponRenderers.Where(x => x != null && x.transform.IsChildOf(model.transform)))
+                            if (ren is SkinnedMeshRenderer smr ? smr.bones.Any(b => b != null && (b == best.Key || b.IsChildOf(best.Key))) : ren.transform.IsChildOf(best.Key))
+                            {
+                                if (!any)
+                                    bounds = ren.bounds;
+                                else
+                                    bounds.Encapsulate(ren.bounds);
+                                any = true;
+                            }
+                        r.weaponCentre = any ? best.Key.InverseTransformPoint(bounds.center) : Vector3.zero;
+                    }
+                    else if (samples[far].beyond >= 1.6f)
+                        notes.Add($"{name}: {best.Key.name} {samples[far].z:F1} m ahead, {samples[far].hand:F2} m from her hands, the blows " +
+                                  $"{action.HitsAhead:F1} m out - not thrown");
+                }
+                list.Add(r);
+                notes.Add(r.IsThrow ? $"{name} throw ({r.weapon}: leaves her hand at {r.release:F2} s, {r.reach:F1} m ahead at the farthest at {r.farAt:F2} s, back at {r.back:F2} s; " +
+                                      $"hits {r.anchorReach:F1} m ahead in the game)"
+                          : r.IsShot ? $"{name} shot (bullets at {r.speed:F0} m/s; the game's line {r.anchorReach:F1} m)"
+                          : $"{name} placed (the spot fixed at {r.lockAt:F2} s; the game's line {r.anchorReach:F1} m)");
+            }
+            note = notes.Count > 0 ? string.Join("; ", notes) : "none";
+            return list;
+        }
+
+        // ---- the look of a bullet and of MAX mode (made once, in Generated/fx)
+
+        const string FxDir = "Assets/RoeFighter/Generated/fx";
+
+        /// <summary>A glow material: the legacy additive particle shader UFE 2's hit effects draw with in URP (alpha-blended: the
+        /// one for flames that must show on a bright floor too), on one of UFE's soft textures (URP's own particle shader when
+        /// UFE is not in the project).</summary>
+        static Material Glow(string name, Color tint, string ufeTexture, bool blended = false)
+        {
+            Directory.CreateDirectory(FxDir);
+            string path = $"{FxDir}/{name}.mat";
+            var shader = Shader.Find(blended ? "Legacy Shaders/Particles/Alpha Blended" : "Legacy Shaders/Particles/Additive") ?? Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(shader);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            mat.shader = shader;
+            var tex = AssetDatabase.FindAssets($"{ufeTexture} t:Texture2D", new[] { RoeHitFx.UfeFolder })
+                .Select(g => AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(g))).FirstOrDefault(t => t != null)
+                ?? AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd");
+            if (mat.HasProperty("_MainTex"))
+                mat.SetTexture("_MainTex", tex);
+            if (mat.HasProperty("_BaseMap"))
+                mat.SetTexture("_BaseMap", tex);
+            if (mat.HasProperty("_TintColor"))
+                mat.SetColor("_TintColor", tint);
+            if (mat.HasProperty("_BaseColor"))
+                mat.SetColor("_BaseColor", tint);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>
+        /// A bullet: a short glowing streak, a quad standing in the plane of the fight line and the vertical (it faces the side
+        /// camera), its head at the bullet, 0.9 m long; the fight moves it.
+        /// </summary>
+        static GameObject Tracer()
+        {
+            string path = $"{FxDir}/tracer.prefab";
+            var mat = Glow("tracer", new Color(1f, 0.75f, 0.35f, 0.9f), "alpha_ball");
+            var root = new GameObject("tracer");
+            foreach (var (n, length, height, colourScale) in new[] { ("streak", 0.9f, 0.07f, 1f), ("core", 0.25f, 0.16f, 1f) })
+            {
+                var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                quad.name = n;
+                Object.DestroyImmediate(quad.GetComponent<Collider>());
+                quad.transform.SetParent(root.transform, false);
+                quad.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                quad.transform.localPosition = new Vector3(0f, 0f, -length * 0.5f + 0.05f);
+                quad.transform.localScale = new Vector3(length, height, 1f);
+                var mr = quad.GetComponent<MeshRenderer>();
+                mr.sharedMaterial = mat;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+            }
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        /// <summary>
+        /// MAX mode's aura: orange-red flames rising from her feet up her body (alpha-blended, so they show on a bright floor and
+        /// on her) with a glow among them (additive), particle systems the fight steps itself - FightGame.StepAuras - so a
+        /// recording has them too, in world space so they trail behind as she moves.
+        /// </summary>
+        static GameObject MaxAura()
+        {
+            string path = $"{FxDir}/max_aura.prefab";
+            var root = new GameObject("max_aura");
+            // (the legacy particle shaders double the tint: 0.5 grey leaves the particles' own colours)
+            // (saturated orange: on the cream floors pale flames vanish and red ones read as blood)
+            Flames(root, "flames", Glow("max_aura", new Color(0.5f, 0.5f, 0.5f, 0.5f), "alpha_ball", blended: true), 150f,
+                   new Vector2(0.5f, 0.85f), new Vector2(1.6f, 2.8f), new Vector2(0.32f, 0.6f), 0.3f,
+                   new Color(1f, 0.8f, 0.3f), new Color(1f, 0.5f, 0.08f), new Color(0.95f, 0.3f, 0.03f), 0.7f);
+            Flames(root, "glow", Glow("max_aura_glow", new Color(0.5f, 0.5f, 0.5f, 0.5f), "alpha_ball"), 55f,
+                   new Vector2(0.35f, 0.6f), new Vector2(0.8f, 1.6f), new Vector2(0.6f, 0.95f), 0.2f,
+                   new Color(1f, 0.85f, 0.45f), new Color(1f, 0.6f, 0.2f), new Color(1f, 0.35f, 0.08f), 0.75f);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        /// <summary>One particle system of the aura: a narrow cone up from a ring round her feet.</summary>
+        static void Flames(GameObject root, string name, Material mat, float rate, Vector2 life, Vector2 speed, Vector2 size, float radius,
+                           Color from, Color mid, Color to, float alpha)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(root.transform, false);
+            go.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);      // the cone's axis (+Z) up
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.loop = true;
+            main.duration = 1f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(life.x, life.y);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(speed.x, speed.y);
+            main.startSize = new ParticleSystem.MinMaxCurve(size.x, size.y);
+            main.startColor = new ParticleSystem.MinMaxGradient(Color.white, new Color(1f, 0.92f, 0.85f));
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 400;
+            var emission = ps.emission;
+            emission.rateOverTime = rate;
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 8f;
+            shape.radius = radius;
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(from, 0f), new GradientColorKey(mid, 0.45f), new GradientColorKey(to, 1f) },
+                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(alpha, 0.15f), new GradientAlphaKey(alpha * 0.6f, 0.6f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            var sz = ps.sizeOverLifetime;
+            sz.enabled = true;
+            sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.35f));
+            var ren = go.GetComponent<ParticleSystemRenderer>();
+            ren.sharedMaterial = mat;
+            ren.renderMode = ParticleSystemRenderMode.Billboard;
+            ren.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         /// <summary>"g04=doa6_mai,a08=x" (the argument, else the fallback) as a table.</summary>
@@ -862,6 +1103,8 @@ namespace RoeFighter.EditorTools
             Debug.Log($"[ROE] camera: {hide.Report(game)}");
             Debug.Log($"[ROE] fight recorded: {shot} frames ({shot * every / 60f:F1} s), {sounds} sounds, rounds won {game.wins[0]}-{game.wins[1]}, " +
                       $"to {outDir}{states}");
+            // what the fight used: MAX, cancels, guard cancels, ranged skills landing or missing, clashes
+            Debug.Log($"[ROE] fight events ({game.events.Count}): {string.Join("; ", game.events)}");
         }
 
         /// <summary>The sounds of a filmed fight for make_video.py, at the frames of the video (every: steps per frame): timeline.json.</summary>

@@ -70,6 +70,17 @@ namespace RoeFighter.Fight
         public List<MotionPack> motionPacks = new List<MotionPack>();   // basic moves that can be swapped (F3)
         public int motionPack;
         float noticeTime;
+        /// <summary>A bullet's look (a glowing streak; made by the scene build, RoeFightScene.Tracer) and MAX mode's aura round a
+        /// fighter (RoeFightScene.MaxAura); null: none.</summary>
+        public GameObject tracerPrefab, maxAuraPrefab;
+        /// <summary>A line along the bottom of the picture (the demos say what is being shown); empty: none.</summary>
+        [NonSerialized] public string caption = "";
+        /// <summary>The bullets in flight (RangedSkill "shot").</summary>
+        public readonly List<Projectile> projectiles = new List<Projectile>();
+        readonly float?[] lastThrowU = new float?[2];     // where each one's thrown weapon was along the line a step ago
+        readonly GameObject[] auras = new GameObject[2];
+        /// <summary>The fight's events worth a line in a recording's log (MAX, cancels, clashes, ranged blows).</summary>
+        public readonly List<string> events = new List<string>();
 
         /// <summary>The teams: roster entries in fighting order; current = who of each is fighting.</summary>
         public readonly List<int>[] team = { new List<int>(), new List<int>() };
@@ -106,6 +117,7 @@ namespace RoeFighter.Fight
         readonly Dictionary<int, FighterRig> twins = new Dictionary<int, FighterRig>();   // a second copy of a fighter, for a mirror match
         float phaseTime, hitStop, slowMotion;
         float accumulator;
+        readonly FighterInput[] buffered = new FighterInput[2];     // presses made in the hit stop, for the step after it
         readonly FightAI[] ai = new FightAI[2];
 
         // what the editor needs to make a video: sounds with their frame numbers
@@ -619,6 +631,14 @@ namespace RoeFighter.Fight
                     DestroyAny(x.instance);
             live.Clear();
             schedule.Clear();
+            ClearProjectiles();
+            // MAX mode ends with the round (the one who stays on starts the next one without it)
+            foreach (var x in f)
+                if (x != null && x.Max)
+                {
+                    x.maxTime = 0f;
+                    OnMaxEnd(x);
+                }
             // what came off stays off for the whole match; the pieces still lying about go
             foreach (var rig in rigs)
                 if (rig.burst != null)
@@ -628,6 +648,7 @@ namespace RoeFighter.Fight
             message = TeamMode ? $"ROUND {round}\n{f[0].rig.displayName}  vs  {f[1].rig.displayName}" : $"ROUND {round}";
             hitStop = 0f;
             slowMotion = 0f;
+            buffered[0] = buffered[1] = default;
             if (hud != null)
                 hud.Build(this);
         }
@@ -714,6 +735,15 @@ namespace RoeFighter.Fight
 
         static FighterInput Held(FighterInput i) => new FighterInput { x = i.x, y = i.y };
 
+        /// <summary>The stick of <paramref name="now"/> with the buttons of both.</summary>
+        static FighterInput WithPresses(FighterInput now, FighterInput earlier) => new FighterInput
+        {
+            x = now.x, y = now.y,
+            a = now.a || earlier.a, b = now.b || earlier.b, c = now.c || earlier.c, d = now.d || earlier.d,
+            ab = now.ab || earlier.ab, cd = now.cd || earlier.cd, max = now.max || earlier.max,
+            s1 = now.s1 || earlier.s1, s2 = now.s2 || earlier.s2, s3 = now.s3 || earlier.s3,
+        };
+
         void Restart()
         {
             if (phase == Phase.Select)
@@ -740,6 +770,11 @@ namespace RoeFighter.Fight
 
             if (hitStop > 0f)
             {
+                // a press in the hit stop is not lost: it counts in the first step after it (the KOF games' input buffer - a
+                // super cancel or a guard cancel is pressed just as the blow lands)
+                if (inputs != null)
+                    for (int i = 0; i < 2 && i < inputs.Length; i++)
+                        buffered[i] = WithPresses(inputs[i], buffered[i]);
                 hitStop -= Dt;
                 foreach (var x in f)
                     x.rig.Tick(0f);
@@ -776,6 +811,12 @@ namespace RoeFighter.Fight
                 var input = phase == Phase.Fight
                     ? (cpu[i] ? ai[i].Decide(me, dt, camRight) : inputs != null && inputs.Length > i ? inputs[i] : default)
                     : default;
+                if (buffered[i].anyPressed)
+                {
+                    if (phase == Phase.Fight && !cpu[i])
+                        input = WithPresses(input, buffered[i]);
+                    buffered[i] = default;
+                }
                 // towards the opponent is forward, whichever way the camera looks at the line
                 int screenSign = Vector3.Dot(axis * me.FoeSide, camRight) >= 0f ? 1 : -1;
                 me.Step(dt, input.x * screenSign, input.y, input);
@@ -788,7 +829,11 @@ namespace RoeFighter.Fight
                 x.AfterPose(dt);
             }
             if (phase == Phase.Fight)
+            {
                 CheckStrikes();
+                StepProjectiles(dt);
+            }
+            StepAuras(dt);
             StepEffects(dt);
             Rules();
         }
@@ -848,6 +893,8 @@ namespace RoeFighter.Fight
                     continue;
                 atk.hitDone = true;
                 atk.connected = true;
+                // MAX mode's 20% more; a guard cancel's blowback does half
+                int damage = Mathf.RoundToInt(m.damage * atk.DamageScale * (atk.guardCancel ? 0.5f : 1f));
                 if (vic.CanBlock && vic.Blocks(m))
                 {
                     vic.BlockHit(m.blockstun, m.push * 0.5f, vic.downHeld > 0);
@@ -861,7 +908,7 @@ namespace RoeFighter.Fight
                 else
                 {
                     bool heavy = m.knockdown || m.launch || m.damage >= hitHeavyDamage;
-                    vic.TakeHit(m.damage, m.hitstun, m.push, m.knockdown, m.launch, m.launchUp, m.launchBack, m.Low);
+                    vic.TakeHit(damage, m.hitstun, m.push, m.knockdown, m.launch, m.launchUp, m.launchBack, m.Low);
                     // the blowback attack (C+D) that lands takes the next stage of her outfit off (user 10-18 "爆衣效果也加上")
                     if (m.launch)
                         BurstClothes(vic, vic.lastHitDir);
@@ -914,8 +961,12 @@ namespace RoeFighter.Fight
             }
             foreach (var s in action.shakes)
                 At(start + s.time, () => Shake(s.amplitude, s.duration));
+            // a ranged skill's effects on the target come with its blows, where they land (TargetEffects), not on the clock
+            bool ranged = atk.rig.Ranged(action.name) != null;
             foreach (var s in action.spawns)
             {
+                if (ranged && s.kind == "target")
+                    continue;
                 var prefab = effects.FirstOrDefault(e => e.name == s.prefab)?.prefab;
                 if (prefab == null)
                     continue;
@@ -930,6 +981,255 @@ namespace RoeFighter.Fight
             }
             if (action.name == "skill3")
                 slowMotion = 0.25f;
+        }
+
+        /// <summary>
+        /// A ranged skill's blow landed (or was blocked): its effects on the target that the game times round this blow (the
+        /// spawns nearest to it), on her now.
+        /// </summary>
+        void TargetEffects(Fighter atk, Special s, int blow)
+        {
+            var action = atk.rig.sheet?.Find(s.action);
+            if (action == null || blow < 0)
+                return;
+            var blows = action.Blows.Select(h => h.time).ToList();
+            if (blow >= blows.Count)
+                return;
+            foreach (var sp in action.spawns.Where(x => x.kind == "target"))
+            {
+                int nearest = 0;
+                for (int i = 1; i < blows.Count; i++)
+                    if (Mathf.Abs(blows[i] - sp.time) < Mathf.Abs(blows[nearest] - sp.time))
+                        nearest = i;
+                if (nearest != blow)
+                    continue;
+                var prefab = effects.FirstOrDefault(e => e.name == sp.prefab)?.prefab;
+                if (prefab == null)
+                    continue;
+                var vic = atk.foe;
+                At(clock + Mathf.Max(0f, sp.time - blows[blow]), () =>
+                {
+                    var anchor = vic.rig.Anchor(sp.name);
+                    Spawn(prefab, anchor.position, atk.rig.transform.rotation);
+                });
+            }
+        }
+
+        // ---- ranged skills' projectiles: bullets in flight, thrown weapons meeting things
+
+        /// <summary>Does a point (a thrown weapon's middle, a bullet) meet her body: along the line and at a height her body spans
+        /// (up to aboveTop over its top: a thrown weapon's reach round its middle)?</summary>
+        public bool Meets(Vector3 point, Fighter vic, float radius, float aboveTop = 0.15f)
+        {
+            if (vic == null || !vic.Hittable)
+                return false;
+            float u = Vector3.Dot(point - centre, axis), h = point.y - centre.y;
+            return Mathf.Abs(u - vic.U) < Fighter.BodyRadius + radius && h > vic.H - 0.1f && h < vic.H + vic.Top + aboveTop;
+        }
+
+        /// <summary>
+        /// Two things flying along the line meet in this step: within 0.7 m of each other now, or they passed each other since
+        /// the step before (a bullet and a thrown sword close at some 60 m/s: a metre a step).
+        /// </summary>
+        static bool Meet(float a, float? aBefore, float b, float? bBefore)
+        {
+            if (Mathf.Abs(a - b) < 0.7f)
+                return true;
+            return aBefore.HasValue && bBefore.HasValue && Mathf.Sign(a - b) != Mathf.Sign(aBefore.Value - bBefore.Value);
+        }
+
+        /// <summary>A bullet fired by a "shot" skill: from her gun hand, along the fight line, at the skill's speed.</summary>
+        public void Fire(Fighter atk, Special s, RangedSkill r, int blow, int damage, bool last)
+        {
+            var hand = atk.rig.Bone(HumanBodyBones.RightHand) ?? atk.rig.transform;
+            var muzzle = hand.position + atk.Forward * 0.25f;
+            var p = new Projectile
+            {
+                owner = atk, special = s, dir = atk.facing, speed = r.speed, damage = damage, last = last, blow = blow,
+                u = Vector3.Dot(muzzle - centre, axis), h = Mathf.Clamp(muzzle.y - centre.y, 0.8f, 1.5f),
+            };
+            if (tracerPrefab != null)
+            {
+                p.visual = Instantiate(tracerPrefab, Projected(p), Quaternion.LookRotation(axis * p.dir, Vector3.up));
+                p.visual.hideFlags = HideFlags.DontSave;
+            }
+            projectiles.Add(p);
+        }
+
+        Vector3 Projected(Projectile p) => centre + axis * p.u + Vector3.up * p.h;
+
+        /// <summary>
+        /// The bullets fly on; one that meets the opponent lands its blow (blockable, as her skill's first blow decides); two that
+        /// meet from either side, or a bullet and a thrown weapon, or two thrown weapons, cancel each other with a spark.
+        /// </summary>
+        void StepProjectiles(float dt)
+        {
+            foreach (var p in projectiles)
+            {
+                if (p.dead)
+                    continue;
+                float stepLength = p.speed * dt;
+                // checked along the step (a fast bullet would jump over a body in one 1/60 s step)
+                int sub = Mathf.Max(1, Mathf.CeilToInt(stepLength / 0.2f));
+                for (int k = 0; k < sub && !p.dead; k++)
+                {
+                    p.u += p.dir * stepLength / sub;
+                    p.travelled += stepLength / sub;
+                    var vic = p.owner.foe;
+                    if (Meets(Projected(p), vic, 0.12f))
+                    {
+                        p.dead = true;
+                        SpecialHit(p.owner, p.special, p.damage, p.last, landed: true, blow: p.blow);
+                        events.Add($"{frame / 60f:F2}s {p.owner.rig.id} bullet {p.blow + 1} meets {vic.rig.id} at {Mathf.Abs(p.u - p.owner.U):F1} m");
+                    }
+                }
+                if (!p.dead && (p.travelled > 16f || Mathf.Abs(p.u) > HalfWidth + 4f))
+                    p.dead = true;
+                if (p.visual != null)
+                    p.visual.transform.position = Projected(p);
+            }
+            // clashes
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                var a = projectiles[i];
+                if (a.dead)
+                    continue;
+                for (int j = i + 1; j < projectiles.Count && !a.dead; j++)
+                {
+                    var b = projectiles[j];
+                    if (b.dead || b.owner == a.owner || Mathf.Abs(a.u - b.u) > 0.5f || Mathf.Abs(a.h - b.h) > 0.9f)
+                        continue;
+                    a.dead = b.dead = true;
+                    Clash(Projected(a), "bullets");
+                }
+                var other = a.owner.foe;
+                if (!a.dead && other != null && other.ThrowPoint is Vector3 w && Mathf.Abs(w.y - centre.y - a.h) < 0.9f &&
+                    Meet(a.u, a.u - a.dir * a.speed * dt, Vector3.Dot(w - centre, axis), lastThrowU[other == f[0] ? 0 : 1]))
+                {
+                    a.dead = true;
+                    other.SpendThrow();
+                    Clash(w, "a bullet and a thrown weapon");
+                }
+            }
+            if (f[0].ThrowPoint is Vector3 w0 && f[1].ThrowPoint is Vector3 w1 && Mathf.Abs(w0.y - w1.y) < 1.0f &&
+                Meet(Vector3.Dot(w0 - centre, axis), lastThrowU[0], Vector3.Dot(w1 - centre, axis), lastThrowU[1]))
+            {
+                f[0].SpendThrow();
+                f[1].SpendThrow();
+                Clash((w0 + w1) * 0.5f, "two thrown weapons");
+            }
+            for (int i = 0; i < 2; i++)
+                lastThrowU[i] = f[i].ThrowPoint is Vector3 v ? Vector3.Dot(v - centre, axis) : (float?)null;
+            for (int i = 0; i < projectiles.Count; i++)
+                if (projectiles[i].dead)
+                {
+                    if (projectiles[i].visual != null)
+                        DestroyAny(projectiles[i].visual);
+                    projectiles.RemoveAt(i--);
+                }
+        }
+
+        void Clash(Vector3 at, string what)
+        {
+            Spark(at, 1.2f, hitHeavy);
+            Shake(0.4f, 0.15f);
+            hitStop = 0.06f;
+            events.Add($"{frame / 60f:F2}s clash: {what}");
+        }
+
+        void ClearProjectiles()
+        {
+            foreach (var p in projectiles)
+                if (p.visual != null)
+                    DestroyAny(p.visual);
+            projectiles.Clear();
+            lastThrowU[0] = lastThrowU[1] = null;
+        }
+
+        /// <summary>For the CPU: how far off the nearest thing the opponent sent her way still is (a bullet, a thrown weapon); -1 none.</summary>
+        public float IncomingThreat(Fighter me)
+        {
+            float nearest = -1f;
+            foreach (var p in projectiles)
+                if (!p.dead && p.owner != me && Mathf.Sign(me.U - p.u) == p.dir)
+                {
+                    float d = Mathf.Abs(me.U - p.u);
+                    if (nearest < 0f || d < nearest)
+                        nearest = d;
+                }
+            if (me.foe != null && me.foe.ThrowPoint is Vector3 w)
+            {
+                float d = Mathf.Abs(me.U - Vector3.Dot(w - centre, axis));
+                if (nearest < 0f || d < nearest)
+                    nearest = d;
+            }
+            return nearest;
+        }
+
+        // ---- MAX mode, guard cancels, super cancels
+
+        public void OnMaxStart(Fighter who)
+        {
+            hitStop = Mathf.Max(hitStop, 0.3f);
+            var chest = who.rig.Bone(HumanBodyBones.Chest) ?? who.rig.transform;
+            Spark(chest.position, 1.4f, hitHeavy);
+            Shake(0.35f, 0.25f);
+            PlaySound(who, "hit", 0.9f);
+            if (maxAuraPrefab != null)
+            {
+                if (auras[who.index] != null)
+                    DestroyAny(auras[who.index]);
+                auras[who.index] = Instantiate(maxAuraPrefab, who.pos, Quaternion.identity);
+                auras[who.index].hideFlags = HideFlags.DontSave;
+            }
+            events.Add($"{frame / 60f:F2}s {who.rig.id} MAX");
+        }
+
+        public void OnMaxEnd(Fighter who)
+        {
+            if (auras[who.index] != null)
+            {
+                DestroyAny(auras[who.index]);
+                auras[who.index] = null;
+            }
+        }
+
+        /// <summary>MAX mode's aura stays round her (its particles stepped here, like the skills' effects: a recording has them too).</summary>
+        void StepAuras(float dt)
+        {
+            for (int i = 0; i < 2; i++)
+                if (auras[i] != null)
+                {
+                    if (f[i] == null || !f[i].Max)
+                    {
+                        DestroyAny(auras[i]);
+                        auras[i] = null;
+                        continue;
+                    }
+                    auras[i].transform.position = f[i].pos;
+                    foreach (var p in auras[i].GetComponentsInChildren<ParticleSystem>(true))
+                    {
+                        if (p.time <= 0f && p.particleCount == 0)
+                            p.Simulate(0f, true, true, false);
+                        p.Simulate(dt, true, false, false);
+                    }
+                }
+        }
+
+        public void OnGuardCancel(Fighter who, string what)
+        {
+            var chest = who.rig.Bone(HumanBodyBones.Chest) ?? who.rig.transform;
+            Spark(chest.position, 0.9f, hitBlock);
+            hitStop = Mathf.Max(hitStop, 0.12f);
+            events.Add($"{frame / 60f:F2}s {who.rig.id} guard cancel: {what}");
+        }
+
+        public void OnSuperCancel(Fighter who)
+        {
+            var chest = who.rig.Bone(HumanBodyBones.Chest) ?? who.rig.transform;
+            Spark(chest.position, 1.2f, hitHeavy);
+            hitStop = Mathf.Max(hitStop, 0.2f);
+            events.Add($"{frame / 60f:F2}s {who.rig.id} super cancel");
         }
 
         /// <summary>A skill's blows reach this far beyond the opponent's own radius (the game's receiveRadius).</summary>
@@ -954,22 +1254,30 @@ namespace RoeFighter.Fight
         /// A damage moment of a skill.  The first one decides: the opponent blocks it (holding back),
         /// has stepped out of reach (a miss), or is hit.  A hit or a block then holds the opponent
         /// until the skill is over, the way the game stages it; the super's last hit knocks down.
+        /// landed: a ranged skill's blow that reached her (a thrown weapon or a bullet met her, the aimed spot has her): no reach
+        /// test - only whether she blocks; its effects on the target come now (blow: which of the skill's blows).
         /// </summary>
-        public void SpecialHit(Fighter atk, Special s, int damage, bool last)
+        public void SpecialHit(Fighter atk, Special s, int damage, bool last, bool landed = false, int blow = -1)
         {
             var vic = atk.foe;
-            if (atk.specialOutcome == 0)
+            if (landed)
             {
-                // a ranged skill (Inase's thrown swords, Kart's pistols, Amano's super; FighterRig.rangedSkills) reaches her anywhere
-                // along the line - but not in the air, where a jump takes her over it
-                bool ranged = atk.rig.IsRanged(s.name);
-                float reach = ranged ? Mathf.Max(s.range, maxSeparation + 1f) : BlowReach(atk.rig.sheet != null ? atk.rig.sheet.Find(s.action) : null, vic);
-                bool over = ranged && vic.Airborne && vic.H > 0.5f;
-                atk.specialOutcome = !vic.Hittable || over || Vector3.Distance(atk.pos, vic.pos) > reach ? 3 : vic.CanBlock ? 2 : 1;
+                if (!vic.Hittable)
+                    return;
+                if (atk.specialOutcome == 0 || atk.specialOutcome == 3)
+                    atk.specialOutcome = vic.CanBlock ? 2 : 1;
+                TargetEffects(atk, s, blow);
+                events.Add($"{frame / 60f:F2}s {atk.rig.id} {s.name} blow {blow + 1} {(atk.specialOutcome == 2 ? "blocked" : "lands")} at {atk.Dist:F1} m");
+            }
+            else if (atk.specialOutcome == 0)
+            {
+                float reach = BlowReach(atk.rig.sheet != null ? atk.rig.sheet.Find(s.action) : null, vic);
+                atk.specialOutcome = !vic.Hittable || Vector3.Distance(atk.pos, vic.pos) > reach ? 3 : vic.CanBlock ? 2 : 1;
             }
             if (atk.specialOutcome == 3 || !vic.Hittable)
                 return;
-            float hold = atk.SpecialRemaining + 0.15f;
+            // (a bullet still in flight when the skill is over holds her only briefly)
+            float hold = atk.special == s ? atk.SpecialRemaining + 0.15f : 0.4f;
             if (atk.specialOutcome == 2)
             {
                 vic.hp = Mathf.Max(1, vic.hp - Mathf.RoundToInt(damage * 0.1f));

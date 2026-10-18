@@ -62,6 +62,55 @@ namespace RoeFighter.Fight
         public float range = 6f;           // starts only when the opponent is closer than this
     }
 
+    /// <summary>
+    /// A skill of hers that hits from a distance in her game (user 10-18 "inase有远程攻击也加上", then "要做真正飞过去的弹道物体" -
+    /// "做"): the game stands the enemy line several metres off, and these skills do not dash up to it.  The scene build finds
+    /// them (no "attack" slide in the skill sheet, hit effects 3 m or more ahead) and how each one reaches:
+    ///   throw  her weapon flies in the game's clip (Inase's greatsword in skill 2, Kart's axe in skill 1).  It flies to where
+    ///          the opponent stood when it left her hand - the game's own flight stretched or shortened to that distance - and
+    ///          lands the skill's blows when it meets her body on the way; a jump over it, a roll through it or a step away
+    ///          and it misses.  Thrown back the way the game's clip catches it.
+    ///   shot   bullets (Kart's pistols): one per blow, fired so that each would reach the game's distance at the blow's
+    ///          moment, flying along the fight line (Projectile); each lands on what it meets, blockable, or flies on past.
+    ///   place  the blow comes down where she aimed (Amano's tentacles, Inase's swords of light): the spot is fixed shortly
+    ///          before the first blow and the blow lands only if the opponent is still there, on the ground.
+    /// The game's far effects (its hit anchors, the trail riding on the thrown weapon) are moved to the distance the skill
+    /// really reaches (FighterRig.BeginRemap).
+    /// </summary>
+    [Serializable]
+    public class RangedSkill
+    {
+        public string skill;               // "skill2"
+        public string kind = "place";      // throw | shot | place
+        public float anchorReach;          // m ahead of her where the game puts this skill's hit effects (its enemy line)
+        public string weapon;              // throw: name of the weapon bone that flies (one of the rig's weapon roots)
+        public Vector3 weaponCentre;       // throw: the middle of the weapon in that bone's frame
+        public float reach;                // throw: how far ahead the weapon gets in the game's clip (m, from her root)
+        public float release, back;        // throw: timeline seconds the weapon leaves her hand / is back in it
+        public float farAt;                // throw: timeline seconds it is farthest out (its way out ends there)
+        public float[] path;               // throw: how far ahead of her root it is in the game's clip, every 1/30 s from release to back
+        public float lockAt;               // place: timeline seconds the spot is fixed
+        public float speed = 26f;          // shot: m/s
+        public bool IsThrow => kind == "throw";
+        public bool IsShot => kind == "shot";
+        public bool IsPlace => kind == "place";
+    }
+
+    /// <summary>A bullet in flight along the fight line (RangedSkill "shot"), stepped by the fight.</summary>
+    public class Projectile
+    {
+        public Fighter owner;
+        public Special special;            // the skill that fired it (its damage moment is this projectile's)
+        public float u, h;                 // along the fight axis (m from the centre), height above the floor
+        public int dir;                    // +1 along the axis, -1 against it
+        public float speed, travelled;
+        public int damage;
+        public bool last;                  // the skill's last blow (the super's knocks down)
+        public int blow;                   // which blow of the skill
+        public GameObject visual;
+        public bool dead;
+    }
+
     /// <summary>Input of one fighter for one simulation step, in screen terms.</summary>
     public struct FighterInput
     {
@@ -69,8 +118,9 @@ namespace RoeFighter.Fight
         public int y;                      // +1 up (jump), -1 down (crouch)
         public bool a, b, c, d;            // pressed this step
         public bool ab, cd;                // the paired presses on their own keys (A+B the roll, C+D the blowback attack)
+        public bool max;                   // MAX mode (B+C on its own key)
         public bool s1, s2, s3;            // special shortcuts pressed this step
-        public bool anyPressed => a || b || c || d || ab || cd || s1 || s2 || s3;
+        public bool anyPressed => a || b || c || d || ab || cd || max || s1 || s2 || s3;
     }
 
     public enum FightState

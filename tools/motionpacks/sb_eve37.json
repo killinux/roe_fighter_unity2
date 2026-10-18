@@ -13,7 +13,10 @@
   "guard": "Assets/SB/eve37/anims/Proto_Lockon_Battle_Idle.anim",
   "walk": "Assets/SB/eve37/anims/Proto_Lockon_Walk_Forward.anim",
   "walk_back": "Assets/SB/eve37/anims/Proto_Lockon_Walk_Backward.anim",
-  "run": "Assets/SB/eve37/anims/Proto_Lockon_Run_Forward.anim"
+  "run": "Assets/SB/eve37/anims/Proto_Lockon_Run_Forward.anim",
+  "block": "Assets/SB/eve09/anims/Proto_Guard_idle.anim",
+  "block_hit": "Assets/SB/eve09/anims/Proto_Guard_Hit_Back.anim@0-0.6",
+  "backdash": "Assets/SB/eve09/anims/Proto_Lockon_Evade_Backward.anim@0-0.75"
  },
  "strikes": [
   {

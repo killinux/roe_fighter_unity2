@@ -1,0 +1,99 @@
+{
+ "name": "kof_survey_mai",
+ "title": "survey: Mai's crouch / guard / jumps",
+ "strikesOnly": true,
+ "measureOn": "a08",
+ "source": "Dead or Alive 6 (Koei Tecmo): Mai's motions, ripper_tpose scripts/doa6/g2a_bvh.py",
+ "license": "game data - personal use only",
+ "bvh": {
+  "folder": "_work/mocap/doa6_mai_survey",
+  "reference": "MAI00000_MAI.bvh",
+  "restFrame": -1,
+  "scale": 0.01,
+  "segments": [
+   {
+    "name": "mai_00001",
+    "file": "MAI00001_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00070",
+    "file": "MAI00070_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00071",
+    "file": "MAI00071_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00080",
+    "file": "MAI00080_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00081",
+    "file": "MAI00081_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00061",
+    "file": "MAI00061_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00150",
+    "file": "MAI00150_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00160",
+    "file": "MAI00160_MAI.bvh",
+    "face": "0"
+   }
+  ]
+ },
+ "roles": {},
+ "strikes": [
+  {
+   "button": "A",
+   "name": "sv_mai_00001",
+   "clip": "mai_00001"
+  },
+  {
+   "button": "A",
+   "name": "sv_mai_00070",
+   "clip": "mai_00070"
+  },
+  {
+   "button": "A",
+   "name": "sv_mai_00071",
+   "clip": "mai_00071"
+  },
+  {
+   "button": "A",
+   "name": "sv_mai_00080",
+   "clip": "mai_00080"
+  },
+  {
+   "button": "A",
+   "name": "sv_mai_00081",
+   "clip": "mai_00081"
+  },
+  {
+   "button": "A",
+   "name": "sv_mai_00061",
+   "clip": "mai_00061"
+  },
+  {
+   "button": "A",
+   "name": "sv_mai_00150",
+   "clip": "mai_00150"
+  },
+  {
+   "button": "A",
+   "name": "sv_mai_00160",
+   "clip": "mai_00160"
+  }
+ ]
+}

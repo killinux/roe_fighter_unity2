@@ -25,7 +25,10 @@ namespace RoeFighter.Fight
         Image[,] roundMarks = new Image[2, 3];
         Image[,] teamFrame = new Image[2, MaxTeam], teamShade = new Image[2, MaxTeam], stockBox = new Image[2, MaxStocks];
         RawImage[,] teamFace = new RawImage[2, MaxTeam];
-        Text timer, message, help, notice;
+        RectTransform[] maxFill = new RectTransform[2];
+        Image[] maxImage = new Image[2];
+        Text[] maxText = new Text[2];
+        Text timer, message, help, notice, caption;
         float[] lag = { 1f, 1f };
         Font font;
         Transform layer;                    // where Box and Label put what they make
@@ -42,6 +45,7 @@ namespace RoeFighter.Fight
         static readonly Color LagColor = new Color(0.85f, 0.15f, 0.12f);
         static readonly Color Dark = new Color(0.05f, 0.05f, 0.08f, 0.75f);
         static readonly Color MeterColor = new Color(0.25f, 0.65f, 1f);
+        static readonly Color MaxColor = new Color(1f, 0.45f, 0.1f);
         static readonly Color[] SideColor = { new Color(0.95f, 0.27f, 0.22f), new Color(0.27f, 0.58f, 1f) };
 
         public void Build(FightGame game)
@@ -127,9 +131,19 @@ namespace RoeFighter.Fight
                 meterText[i] = Label($"meterText{i}", "", 26, left ? TextAnchor.LowerLeft : TextAnchor.LowerRight,
                                      left ? new Vector2(0.125f, 0.072f) : new Vector2(0.72f, 0.072f),
                                      left ? new Vector2(0.28f, 0.11f) : new Vector2(0.875f, 0.11f));
+                // MAX mode: the time it has left, a bar over the gauge
+                var maxBox = Box($"max{i}", new Color(0f, 0f, 0f, 0f), left ? new Vector2(0.03f, 0.045f) : new Vector2(0.72f, 0.045f),
+                                 left ? new Vector2(0.28f, 0.07f) : new Vector2(0.97f, 0.07f));
+                maxImage[i] = Box("fill", MaxColor, Vector2.zero, Vector2.one, maxBox);
+                maxFill[i] = maxImage[i].rectTransform;
+                Inset(maxFill[i]);
+                maxText[i] = Label($"maxText{i}", "", 30, left ? TextAnchor.LowerLeft : TextAnchor.LowerRight,
+                                   left ? new Vector2(0.03f, 0.1f) : new Vector2(0.72f, 0.1f),
+                                   left ? new Vector2(0.28f, 0.14f) : new Vector2(0.97f, 0.14f));
+                maxText[i].color = MaxColor;
             }
             timer = Label("timer", "60", 64, TextAnchor.MiddleCenter, new Vector2(0.455f, 0.875f), new Vector2(0.545f, 0.985f));
-            help = Label("help", "1P: A/D move  W jump (tap: hop)  S crouch  back = block  J K U I = A B C D  H = A+B roll  Y = C+D blowback  1 2 3 = skills (236 / 214 / 236236 + J or U)   F1/F2: CPU   F3: motions   F4: cloth   F5: skirt   F6: clothes burst   F7: select   F8: team / single",
+            help = Label("help", "1P: A/D move  W jump (tap: hop)  S crouch  back = block  J K U I = A B C D  H = A+B roll  Y = C+D blowback  G = MAX  1 2 3 = skills (236 / 214 / 236236 + J or U)   F1/F2: CPU   F3: motions   F4: cloth   F5: skirt   F6: clothes burst   F7: select   F8: team / single",
                          18, TextAnchor.LowerCenter, new Vector2(0.1f, 0.0f), new Vector2(0.9f, 0.04f));
             help.gameObject.SetActive(showHelp && !drawnByCamera);
             BuildSelect(game);
@@ -142,6 +156,12 @@ namespace RoeFighter.Fight
             message.resizeTextForBestFit = true;
             message.resizeTextMinSize = 40;
             message.resizeTextMaxSize = 120;
+            // the demos' line along the bottom
+            caption = Label("caption", "", 40, TextAnchor.MiddleCenter, new Vector2(0.05f, 0.15f), new Vector2(0.95f, 0.23f));
+            caption.horizontalOverflow = HorizontalWrapMode.Wrap;
+            caption.resizeTextForBestFit = true;
+            caption.resizeTextMinSize = 18;
+            caption.resizeTextMaxSize = 40;
             notice = Label("notice", "", 22, TextAnchor.UpperCenter, new Vector2(0.1f, 0.63f), new Vector2(0.9f, 0.83f));
             notice.horizontalOverflow = HorizontalWrapMode.Wrap;
             notice.verticalOverflow = VerticalWrapMode.Truncate;
@@ -280,6 +300,8 @@ namespace RoeFighter.Fight
             if (selectLayer != null && selectLayer.activeSelf != selecting)
                 selectLayer.SetActive(selecting);
             message.text = game.message;
+            if (caption != null)
+                caption.text = game.caption ?? "";
             if (notice != null)
             {
                 // in the match one setting a line under the timer; on the select screen one line along the top edge (below
@@ -312,7 +334,18 @@ namespace RoeFighter.Fight
                 meterImage[i].color = stocks >= MaxStocks ? Gold : MeterColor;
                 for (int s = 0; s < MaxStocks; s++)
                     stockBox[i, s].color = s < stocks ? Gold : Dark;
-                meterText[i].text = stocks >= MaxStocks ? "MAX" : stocks > 0 ? $"x{stocks}" : "";
+                meterText[i].text = stocks >= MaxStocks ? "FULL" : stocks > 0 ? $"x{stocks}" : "";
+                // MAX mode: the bar of the time it has left, over the gauge, and a blinking MAX
+                bool max = x.Max;
+                if (maxImage[i].gameObject.activeSelf != max)
+                    maxImage[i].gameObject.SetActive(max);
+                if (max)
+                {
+                    SetFill(maxFill[i], Mathf.Clamp01(x.maxTime / Fighter.MaxDuration), i == 0);
+                    float blink = 0.65f + 0.35f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 7f));
+                    maxImage[i].color = new Color(MaxColor.r, MaxColor.g * blink, MaxColor.b, 1f);
+                }
+                maxText[i].text = max ? "MAX" : "";
                 for (int r = 0; r < 3; r++)
                 {
                     roundMarks[i, r].gameObject.SetActive(!teams && r < game.roundsToWin);

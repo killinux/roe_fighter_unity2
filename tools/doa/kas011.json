@@ -35,6 +35,38 @@
   {
    "name": "skill_03",
    "clip": "kas_01120"
+  },
+  {
+   "name": "crouch",
+   "clip": "kas_00001"
+  },
+  {
+   "name": "block",
+   "clip": "kas_00284"
+  },
+  {
+   "name": "block_hit",
+   "clip": "kas_00357"
+  },
+  {
+   "name": "crouch_block",
+   "clip": "kas_00285"
+  },
+  {
+   "name": "crouch_block_hit",
+   "clip": "kas_00359"
+  },
+  {
+   "name": "backdash",
+   "clip": "kas_00010"
+  },
+  {
+   "name": "jump_arc_fwd",
+   "clip": "kas_00274@0.15-0.62"
+  },
+  {
+   "name": "getup",
+   "clip": "cmn_00370"
   }
  ],
  "skills": [

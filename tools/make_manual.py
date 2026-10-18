@@ -37,7 +37,7 @@ def draw_keys(path):
         '1': (SKILL, '技能 1'), '2': (SKILL, '技能 2'), '3': (SKILL, '超必杀'),
         'W': (MOVE, '跳'), 'A': (MOVE, '左'), 'S': (MOVE, '蹲'), 'D': (MOVE, '右'),
         'J': (ATTACK, 'A 攻击'), 'K': (ATTACK, 'B 攻击'), 'U': (ATTACK, 'C 攻击'), 'I': (ATTACK, 'D 攻击'),
-        'H': (ATTACK, '回避'), 'Y': (ATTACK, '吹飞'),
+        'H': (ATTACK, '回避'), 'Y': (ATTACK, '吹飞'), 'G': (SKILL, 'MAX'),
         'L': (SKILL, '技能 1'), 'O': (SKILL, '技能 2'), 'P': (SKILL, '超必杀'),
         'Enter': (OK, '确认'), 'Space': (OK, '确认'), 'Esc': (FUNC, '退回'),
     }

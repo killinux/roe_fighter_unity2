@@ -97,6 +97,60 @@
     "limb": "auto",
     "face": "0",
     "from": 196
+   },
+   {
+    "name": "mai_00001",
+    "file": "MAI00001_MAI.bvh",
+    "loop": true,
+    "minCycle": 0.5,
+    "maxCycle": 2.1,
+    "face": "0"
+   },
+   {
+    "name": "mai_00070",
+    "file": "MAI00070_MAI.bvh",
+    "loop": true,
+    "minCycle": 0.4,
+    "maxCycle": 1.0,
+    "face": "0"
+   },
+   {
+    "name": "mai_00071",
+    "file": "MAI00071_MAI.bvh",
+    "loop": true,
+    "minCycle": 0.4,
+    "maxCycle": 1.0,
+    "face": "0"
+   },
+   {
+    "name": "mai_00080",
+    "file": "MAI00080_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00081",
+    "file": "MAI00081_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00061",
+    "file": "MAI00061_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00150",
+    "file": "MAI00150_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_00160",
+    "file": "MAI00160_MAI.bvh",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00370",
+    "file": "CMN00370_CMN.bvh",
+    "face": "0"
    }
   ]
  },

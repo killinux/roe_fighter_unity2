@@ -1,31 +1,189 @@
 {
-  "name": "kof_basics",
-  "title": "KOF basics (UFE 2: Robot Kyle)",
-  "note": "The basics of the side-view fight (FightGame.basics), one pack for every fighter: crouching, the jump (take-off, up, down, landing), the standing and crouching block poses and their hits, the reactions a character's own game has no clip for (hit while crouching, a low hit, hit in the air, swept, knocked flying, falling down, getting up), the roll (Kyle's dash), the back dash (Mecanim Bot's), the throw pair; and the strikes thrown from a crouch or in the air, the C+D blowback attack (Kyle's launcher) and the throw's grab. Each fighter keeps her own standing A-D strikes, skills, hurt, fall, lying and (if she has one) get-up clips. The 'hit' windows are UFE's active frames (60 per second, after the speed): frame f = f x speed / 60 s of the clip (_work/ufe2/ufe_moves.tsv).",
-  "source": "Universal Fighting Engine 2 v2.7.0a (Asset Store), demo character Robot Kyle of the 3D Fighter demo (Assets/UFE/Demos/Shared_Assets/Characters/Robot_Kyle/Animations, humanoid .anim) and Mecanim Bot's back dash; speeds and active frames from UFE's move set _3DFighter/Robot_Kyle",
-  "license": "Unity Asset Store EULA: personal use only, never committed (Assets/UFE is gitignored)",
-  "folder": "Assets/UFE/Demos/Shared_Assets/Characters/Robot_Kyle/Animations",
-  "humanoid": false,
-  "strikesOnly": true,
-  "roles": {
-    "guard": "IdleStanding", "walk": "MoveForward", "walk_back": "-MoveForward", "run": "Run_Loop",
-    "crouch": "IdleCrouching", "takeoff": "TakeOff", "jump": "Jumping", "fall": "FallFromJump", "landing": "Landing",
-    "block": "BlockingHighPose", "block_hit": "BlockingHighHit", "crouch_block": "BlockingCrouchingPose", "crouch_block_hit": "BlockingCrouchingHit",
-    "hit_crouch": "HitCrouchingLight", "hit_low": "HitLowMedium", "hit_air": "HitAirJuggle", "hit_sweep": "HitSweep",
-    "knocked_back": "KnockBack", "fall_down": "FallDown", "getup": "StandUp_Default",
-    "dash": "Dash", "backdash": "Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations/Moves/back_dash.anim",
-    "throw_confirm": "ThrowConfirm", "throw_react": "ThrowReaction"
+ "name": "kof_basics",
+ "title": "KOF basics (DOA6 Kasumi, Stellar Blade Eve, UFE 2 Robot Kyle)",
+ "note": "The basics of the side-view fight (FightGame.basics), one pack for every fighter, for what a character's own game has no clip for: crouch, standing and crouching guard and their block-stun from Dead or Alive 6's Kasumi (KAS00001, 00284/00357, 00285/00359; her back dash KAS00010); the jump (take-off, rise, fall, landing), the roll (her forward evade) and the hit in the air from Stellar Blade's Eve (Proto_Lockon_Jump_Start/_End, Proto_Fall_Battle, Proto_Lockon_Evade_Forward, Result_Hit_Air_Light_Fall_Bw; 'clip@from-to' keeps that part); the rest - hit while crouching, a low hit, swept, knocked flying, falling down, getting up, the throw pair, the crouching and jumping strikes, the C+D blowback attack (WallLauncher) and the throw's grab - from UFE 2's Robot Kyle. Each fighter keeps her own standing A-D, skills, hurt, fall, lying and (if she has them) her own versions of these (tools/doa/*.json game clips, her strike pack's roles). Hit windows of Kyle's strikes are UFE's active frames (60 per second, after the speed): frame f = f x speed / 60 s (_work/ufe2/ufe_moves.tsv).",
+ "source": "Universal Fighting Engine 2 v2.7.0a (Asset Store), demo character Robot Kyle of the 3D Fighter demo (Assets/UFE/Demos/Shared_Assets/Characters/Robot_Kyle/Animations, humanoid .anim) and Mecanim Bot's back dash; speeds and active frames from UFE's move set _3DFighter/Robot_Kyle",
+ "license": "Unity Asset Store EULA: personal use only, never committed (Assets/UFE is gitignored)",
+ "folder": "Assets/UFE/Demos/Shared_Assets/Characters/Robot_Kyle/Animations",
+ "humanoid": false,
+ "strikesOnly": true,
+ "roles": {
+  "guard": "IdleStanding",
+  "walk": "MoveForward",
+  "walk_back": "-MoveForward",
+  "run": "Run_Loop",
+  "crouch": "Assets/RoeFighter/Generated/motionpacks/doa6_kas/bvh/kas_00001.anim",
+  "takeoff": "Assets/SB/eve09/anims/Proto_Lockon_Jump_Start.anim@0-0.1",
+  "jump": "Assets/SB/eve09/anims/Proto_Lockon_Jump_Start.anim@0.2-1.2",
+  "fall": "Assets/SB/eve09/anims/Proto_Fall_Battle.anim",
+  "landing": "Assets/SB/eve09/anims/Proto_Lockon_Jump_End.anim@0.25-0.85",
+  "block": "Assets/RoeFighter/Generated/motionpacks/doa6_kas/bvh/kas_00284.anim",
+  "block_hit": "Assets/RoeFighter/Generated/motionpacks/doa6_kas/bvh/kas_00357.anim",
+  "crouch_block": "Assets/RoeFighter/Generated/motionpacks/doa6_kas/bvh/kas_00285.anim",
+  "crouch_block_hit": "Assets/RoeFighter/Generated/motionpacks/doa6_kas/bvh/kas_00359.anim",
+  "hit_crouch": "HitCrouchingLight",
+  "hit_low": "HitLowMedium",
+  "hit_air": "Assets/SB/eve09/anims/Result_Hit_Air_Light_Fall_Bw.anim@0-1.0",
+  "hit_sweep": "HitSweep",
+  "knocked_back": "KnockBack",
+  "fall_down": "FallDown",
+  "getup": "StandUp_Default",
+  "dash": "Dash",
+  "backdash": "Assets/RoeFighter/Generated/motionpacks/doa6_kas/bvh/kas_00010.anim",
+  "throw_confirm": "ThrowConfirm",
+  "throw_react": "ThrowReaction",
+  "roll": "Assets/SB/eve09/anims/Proto_Lockon_Evade_Forward.anim@0-0.75"
+ },
+ "strikes": [
+  {
+   "button": "A",
+   "stance": "crouch",
+   "name": "kof_crouch_a",
+   "clip": "PunchCrouchingLight",
+   "speed": 2.0,
+   "hit": [
+    0.167,
+    0.25
+   ],
+   "damage": 35,
+   "hitstun": 0.3,
+   "blockstun": 0.16,
+   "push": 0.2
   },
-  "strikes": [
-    { "button": "A", "stance": "crouch", "name": "kof_crouch_a", "clip": "PunchCrouchingLight", "speed": 2.0, "hit": [0.167, 0.25], "damage": 35, "hitstun": 0.3, "blockstun": 0.16, "push": 0.2 },
-    { "button": "B", "stance": "crouch", "name": "kof_crouch_b", "clip": "KickCrouchingLight", "speed": 1.4, "level": "Low", "damage": 45, "hitstun": 0.34, "blockstun": 0.2, "push": 0.25 },
-    { "button": "C", "stance": "crouch", "name": "kof_crouch_c", "clip": "PunchCrouchingHeavy", "speed": 1.2, "hit": [0.18, 0.24], "damage": 70, "hitstun": 0.42, "blockstun": 0.24, "push": 0.4 },
-    { "button": "D", "stance": "crouch", "name": "kof_crouch_d", "clip": "KickCrouchingHeavy", "speed": 0.8, "hit": [0.16, 0.267], "level": "Low", "damage": 80, "knockdown": true, "blockstun": 0.3, "push": 0.5 },
-    { "button": "A", "stance": "jump", "name": "kof_jump_a", "clip": "PunchJumpingLight", "speed": 1.4, "hit": [0.257, 0.373], "damage": 40, "hitstun": 0.3, "blockstun": 0.18, "push": 0.2 },
-    { "button": "B", "stance": "jump", "name": "kof_jump_b", "clip": "KickJumpingLight", "speed": 1.0, "hit": [0.217, 0.4], "damage": 50, "hitstun": 0.34, "blockstun": 0.2, "push": 0.25 },
-    { "button": "C", "stance": "jump", "name": "kof_jump_c", "clip": "PunchJumpingHeavy", "speed": 1.0, "hit": [0.2, 0.317], "damage": 70, "hitstun": 0.42, "blockstun": 0.24, "push": 0.4 },
-    { "button": "D", "stance": "jump", "name": "kof_jump_d", "clip": "KickJumpingHeavy", "speed": 1.0, "hit": [0.117, 0.233], "damage": 80, "hitstun": 0.46, "blockstun": 0.26, "push": 0.5 },
-    { "button": "CD", "stance": "stand", "kind": "blowback", "name": "kof_blowback", "clip": "WallLauncher", "speed": 1.2, "hit": [0.32, 0.42], "damage": 75, "launch": true, "launchUp": 4.5, "launchBack": 5.0, "blockstun": 0.4, "push": 0.6, "meter": 8 },
-    { "button": "T", "stance": "stand", "kind": "throw", "name": "kof_throw", "clip": "ThrowAttempt", "speed": 1.0, "hit": [0.133, 0.183], "damage": 110 }
-  ]
+  {
+   "button": "B",
+   "stance": "crouch",
+   "name": "kof_crouch_b",
+   "clip": "KickCrouchingLight",
+   "speed": 1.4,
+   "level": "Low",
+   "damage": 45,
+   "hitstun": 0.34,
+   "blockstun": 0.2,
+   "push": 0.25
+  },
+  {
+   "button": "C",
+   "stance": "crouch",
+   "name": "kof_crouch_c",
+   "clip": "PunchCrouchingHeavy",
+   "speed": 1.2,
+   "hit": [
+    0.18,
+    0.24
+   ],
+   "damage": 70,
+   "hitstun": 0.42,
+   "blockstun": 0.24,
+   "push": 0.4
+  },
+  {
+   "button": "D",
+   "stance": "crouch",
+   "name": "kof_crouch_d",
+   "clip": "KickCrouchingHeavy",
+   "speed": 0.8,
+   "hit": [
+    0.16,
+    0.267
+   ],
+   "level": "Low",
+   "damage": 80,
+   "knockdown": true,
+   "blockstun": 0.3,
+   "push": 0.5
+  },
+  {
+   "button": "A",
+   "stance": "jump",
+   "name": "kof_jump_a",
+   "clip": "PunchJumpingLight",
+   "speed": 1.4,
+   "hit": [
+    0.257,
+    0.373
+   ],
+   "damage": 40,
+   "hitstun": 0.3,
+   "blockstun": 0.18,
+   "push": 0.2
+  },
+  {
+   "button": "B",
+   "stance": "jump",
+   "name": "kof_jump_b",
+   "clip": "KickJumpingLight",
+   "speed": 1.0,
+   "hit": [
+    0.217,
+    0.4
+   ],
+   "damage": 50,
+   "hitstun": 0.34,
+   "blockstun": 0.2,
+   "push": 0.25
+  },
+  {
+   "button": "C",
+   "stance": "jump",
+   "name": "kof_jump_c",
+   "clip": "PunchJumpingHeavy",
+   "speed": 1.0,
+   "hit": [
+    0.2,
+    0.317
+   ],
+   "damage": 70,
+   "hitstun": 0.42,
+   "blockstun": 0.24,
+   "push": 0.4
+  },
+  {
+   "button": "D",
+   "stance": "jump",
+   "name": "kof_jump_d",
+   "clip": "KickJumpingHeavy",
+   "speed": 1.0,
+   "hit": [
+    0.117,
+    0.233
+   ],
+   "damage": 80,
+   "hitstun": 0.46,
+   "blockstun": 0.26,
+   "push": 0.5
+  },
+  {
+   "button": "CD",
+   "stance": "stand",
+   "kind": "blowback",
+   "name": "kof_blowback",
+   "clip": "WallLauncher",
+   "speed": 1.2,
+   "hit": [
+    0.32,
+    0.42
+   ],
+   "damage": 75,
+   "launch": true,
+   "launchUp": 4.5,
+   "launchBack": 5.0,
+   "blockstun": 0.4,
+   "push": 0.6,
+   "meter": 8
+  },
+  {
+   "button": "T",
+   "stance": "stand",
+   "kind": "throw",
+   "name": "kof_throw",
+   "clip": "ThrowAttempt",
+   "speed": 1.0,
+   "hit": [
+    0.133,
+    0.183
+   ],
+   "damage": 110
+  }
+ ]
 }

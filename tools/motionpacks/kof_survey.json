@@ -1,0 +1,138 @@
+{
+ "name": "kof_survey",
+ "title": "survey: own jump / guard / roll clips",
+ "strikesOnly": true,
+ "measureOn": "a08",
+ "source": "Stellar Blade (Eve) and Vindictus (Fiona) clips, for a look",
+ "license": "game data - personal use only",
+ "folder": "Assets/SB/eve09/anims",
+ "humanoid": false,
+ "roles": {},
+ "strikes": [
+  {
+   "button": "A",
+   "name": "sv_Proto_Lockon_Jump_Start",
+   "clip": "Assets/SB/eve09/anims/Proto_Lockon_Jump_Start.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Lockon_Jump_Forward_Start",
+   "clip": "Assets/SB/eve09/anims/Proto_Lockon_Jump_Forward_Start.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Lockon_Jump_End",
+   "clip": "Assets/SB/eve09/anims/Proto_Lockon_Jump_End.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Lockon_Jump_Forward_End",
+   "clip": "Assets/SB/eve09/anims/Proto_Lockon_Jump_Forward_End.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Fall_Battle",
+   "clip": "Assets/SB/eve09/anims/Proto_Fall_Battle.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Guard_idle",
+   "clip": "Assets/SB/eve09/anims/Proto_Guard_idle.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Guard",
+   "clip": "Assets/SB/eve09/anims/Proto_Guard.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Guard_Hit_Back",
+   "clip": "Assets/SB/eve09/anims/Proto_Guard_Hit_Back.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Hit_Guard",
+   "clip": "Assets/SB/eve09/anims/Proto_Hit_Guard.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Lockon_Evade_Backward",
+   "clip": "Assets/SB/eve09/anims/Proto_Lockon_Evade_Backward.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Lockon_Evade_Forward",
+   "clip": "Assets/SB/eve09/anims/Proto_Lockon_Evade_Forward.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Battle_Walk_Roll_R",
+   "clip": "Assets/SB/eve09/anims/Proto_Battle_Walk_Roll_R.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Battle_Walk_Roll_L",
+   "clip": "Assets/SB/eve09/anims/Proto_Battle_Walk_Roll_L.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Proto_Battle_Run_Roll_R",
+   "clip": "Assets/SB/eve09/anims/Proto_Battle_Run_Roll_R.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Result_Hit_Air_Light_Fall_Bw",
+   "clip": "Assets/SB/eve09/anims/Result_Hit_Air_Light_Fall_Bw.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_Result_Hit_Air_Light_Fall_Fw",
+   "clip": "Assets/SB/eve09/anims/Result_Hit_Air_Light_Fall_Fw.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Idle_Jump_Begin",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Idle_Jump_Begin.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Idle_Jump_Falling",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Idle_Jump_Falling.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Idle_Jump_End_Light",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Idle_Jump_End_Light.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Walk_Jump_Begin",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Jump_Begin.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Walk_Jump_Falling",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Jump_Falling.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Walk_Jump_End_Light",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Jump_End_Light.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_HeavyStander_During",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_HeavyStander_During.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Guard_Begin",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Begin.anim"
+  },
+  {
+   "button": "A",
+   "name": "sv_fio_Guard_Hit",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Hit.anim"
+  }
+ ]
+}

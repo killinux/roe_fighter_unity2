@@ -31,13 +31,17 @@ namespace RoeFighter.Fight
         }
 
         /// <summary>The roles the fight plays besides the strikes; "guard" is required.</summary>
+        /// <summary>
+        /// jump_arc / jump_arc_fwd: a jump of her own game in one piece (DOA6's somersaults), cut to the part in the air - played
+        /// over the whole time she is up instead of jump and fall (the second for jumps forward or back); roll: the A+B roll.
+        /// </summary>
         public static readonly string[] Roles =
         {
             "guard", "walk", "walk_back", "run",
-            "crouch", "takeoff", "jump", "fall", "landing",
+            "crouch", "takeoff", "jump", "fall", "landing", "jump_arc", "jump_arc_fwd",
             "block", "block_hit", "crouch_block", "crouch_block_hit",
             "hit_crouch", "hit_low", "hit_air", "hit_sweep", "knocked_back", "fall_down", "getup",
-            "dash", "backdash", "throw_confirm", "throw_react",
+            "dash", "roll", "backdash", "throw_confirm", "throw_react",
         };
 
         /// <summary>The roles that play as loops.</summary>

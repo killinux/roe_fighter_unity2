@@ -157,15 +157,30 @@ namespace RoeFighter.EditorTools
             public List<StrikeSpec> strikes = new List<StrikeSpec>();
         }
 
-        /// <summary>A clip per role of MotionPack.Roles (the field names are the roles); empty: the pack has none.</summary>
+        /// <summary>
+        /// A clip per role of MotionPack.Roles (the field names are the roles); empty: the pack has none.  "clip@0.2-0.8" keeps
+        /// that part of the clip (seconds; "@0.2" from there to its end).
+        /// </summary>
         [Serializable]
         public class RoleMap
         {
             public string guard, walk, walk_back, run;
-            public string crouch, takeoff, jump, fall, landing;
+            public string crouch, takeoff, jump, fall, landing, jump_arc, jump_arc_fwd;
             public string block, block_hit, crouch_block, crouch_block_hit;
             public string hit_crouch, hit_low, hit_air, hit_sweep, knocked_back, fall_down, getup;
-            public string dash, backdash, throw_confirm, throw_react;
+            public string dash, roll, backdash, throw_confirm, throw_react;
+        }
+
+        /// <summary>"name@0.2-0.8" as the name and the part to keep (to 0: to the end); no '@': the whole clip.</summary>
+        public static (string key, float from, float to) SplitRange(string key)
+        {
+            int at = key.LastIndexOf('@');
+            if (at < 0)
+                return (key, 0f, 0f);
+            var range = key.Substring(at + 1).Split('-');
+            float from = float.Parse(range[0], System.Globalization.CultureInfo.InvariantCulture);
+            float to = range.Length > 1 && range[1].Length > 0 ? float.Parse(range[1], System.Globalization.CultureInfo.InvariantCulture) : 0f;
+            return (key.Substring(0, at), from, to);
         }
 
         [Serializable]
@@ -277,10 +292,13 @@ namespace RoeFighter.EditorTools
                 string key = spec.roles != null ? typeof(RoleMap).GetField(role)?.GetValue(spec.roles) as string : null;
                 if (string.IsNullOrEmpty(key))
                     continue;
-                bool backwards = key.StartsWith("-");
-                var src = Find(backwards ? key.Substring(1) : key);
+                var (name, from, to) = SplitRange(key);
+                bool backwards = name.StartsWith("-");
+                var src = Find(backwards ? name.Substring(1) : name);
                 if (src == null)
                     continue;
+                if (from > 0f || to > 0f)
+                    src = Trim(src, from, to);
                 bool loop = MotionPack.LoopRoles.Contains(role);
                 Add(pack, role, Copy(src, $"{outDir}/{role}.anim", loop: loop, inPlace: role != "guard" && role != "crouch", reverse: backwards), loop);
             }

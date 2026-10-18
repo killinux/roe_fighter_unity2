@@ -214,12 +214,152 @@ namespace RoeFighter.Fight
         public MotionPack strikePack;
 
         /// <summary>
-        /// Her skills that are ranged in her game (user 10-18 "inase有远程攻击也加上": Inase's thrown swords, skill 2; Kart's pistols;
-        /// Amano's super) - "skill2", or several as "skill1+skill2": their blows reach the opponent anywhere along the fight line,
-        /// unless she is in the air (a jump takes her over them).  Set when the scene is built (RoeFightScene -roeRanged).
+        /// Her skills that hit from a distance in her game (RangedSkill: Inase's thrown greatsword and swords of light, Kart's
+        /// axe and pistols, Amano's tentacles...) and how each reaches - measured when the scene is built (RoeFightScene.Ranged).
         /// </summary>
-        public string rangedSkills = "";
-        public bool IsRanged(string skill) => !string.IsNullOrEmpty(rangedSkills) && rangedSkills.Split('+', ',', ' ').Contains(skill);
+        public List<RangedSkill> ranged = new List<RangedSkill>();
+        public RangedSkill Ranged(string skill) => ranged.FirstOrDefault(r => r.skill == skill);
+        public bool IsRanged(string skill) => Ranged(skill) != null;
+
+        // ---- a ranged skill's far end moved to where it really reaches (BeginRemap)
+
+        /// <summary>Her hand's reach ahead of her root: nothing nearer than this is moved.</summary>
+        public const float RemapFrom = 0.9f;
+        RangedSkill remap;
+        float remapWeapon = 1f, remapAnchors = 1f;      // how much the distance beyond RemapFrom is stretched (or shortened)
+        Transform remapBone;                             // the thrown weapon's bone (her model)
+        Transform[] remapGhost = new Transform[0];       // the thrown weapon's bones on the game's hidden body (its effects ride there)
+        Transform[] remapAnchorList = new Transform[0];  // the unit's effect anchors far ahead (the game's enemy line)
+        readonly Dictionary<Transform, (Vector3 original, Vector3 set)> remapState = new Dictionary<Transform, (Vector3, Vector3)>();
+        float timelineTime = -1f;                        // the running skill's time (ShowTimeline)
+
+        /// <summary>
+        /// A ranged skill reaches <paramref name="aim"/> metres ahead of her root this time: from now on the thrown weapon's
+        /// flight (her model's weapon bone and the game body's, with the effects riding on it) and the effect anchors the game
+        /// placed out at its enemy line are moved along her facing so that their far end is there - the part beyond her hand
+        /// stretched or shortened, the rest as the game has it.
+        /// </summary>
+        public void BeginRemap(RangedSkill r, float aim)
+        {
+            EndRemap();
+            remap = r;
+            remapWeapon = r.IsThrow && r.reach > RemapFrom + 0.2f ? Mathf.Clamp((aim - RemapFrom) / (r.reach - RemapFrom), 0.05f, 3f) : 1f;
+            remapAnchors = r.anchorReach > RemapFrom + 0.2f ? Mathf.Clamp((aim - RemapFrom) / (r.anchorReach - RemapFrom), 0.05f, 3f) : 1f;
+            remapBone = null;
+            if (r.IsThrow)
+                remapBone = WeaponBone(r.weapon);
+            if (unitRoot != null)
+            {
+                var anchorRoot = unitRoot.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "VfxAnchor");
+                remapAnchorList = anchorRoot != null ? anchorRoot.GetComponentsInChildren<Transform>(true).Where(t => t != anchorRoot).ToArray() : new Transform[0];
+                remapGhost = r.IsThrow
+                    ? unitRoot.GetComponentsInChildren<Transform>(true)
+                        .Where(t => (anchorRoot == null || !t.IsChildOf(anchorRoot)) && System.Text.RegularExpressions.Regex.IsMatch(t.name, "weap|wp_|axe|gun|sword", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                        .ToArray()
+                    : new Transform[0];
+            }
+            RemapUnit();
+        }
+
+        /// <summary>Everything a ranged skill moved back where the game has it.</summary>
+        public void EndRemap()
+        {
+            foreach (var kv in remapState)
+                if (kv.Key != null && (kv.Key.localPosition - kv.Value.set).sqrMagnitude < 1e-10f)
+                    kv.Key.localPosition = kv.Value.original;
+            remapState.Clear();
+            remap = null;
+            remapBone = null;
+            remapGhost = new Transform[0];
+            remapAnchorList = new Transform[0];
+        }
+
+        /// <summary>
+        /// One transform moved along her facing beyond RemapFrom by k.  Its place before that is what the animation (or the
+        /// timeline) wrote this frame - or, when nothing wrote it, what it was before the last move (it never compounds).
+        /// </summary>
+        /// <param name="ahead">put it this far ahead of her instead (its height and the rest as they are)</param>
+        void RemapOne(Transform t, float k, float? ahead = null)
+        {
+            if (t == null || (Mathf.Abs(k - 1f) < 1e-4f && !ahead.HasValue))
+                return;
+            var local = t.localPosition;
+            if (!remapState.TryGetValue(t, out var s) || (local - s.set).sqrMagnitude > 1e-10f)
+                s.original = local;
+            t.localPosition = s.original;
+            var v = transform.InverseTransformPoint(t.position);
+            if (ahead.HasValue || v.z > RemapFrom)
+            {
+                v.z = ahead ?? RemapFrom + (v.z - RemapFrom) * k;
+                t.position = transform.TransformPoint(v);
+            }
+            s.set = t.localPosition;
+            remapState[t] = s;
+        }
+
+        /// <summary>
+        /// How far ahead of her the thrown weapon is now by the game's clip (RangedSkill.path, stretched like the rest), while
+        /// it is out of her hand; null otherwise.
+        /// </summary>
+        float? FlightAhead()
+        {
+            var p = remap?.path;
+            if (p == null || p.Length < 2 || timelineTime < remap.release || timelineTime > remap.back)
+                return null;
+            float f = (timelineTime - remap.release) * 30f;
+            int i = Mathf.Clamp((int)f, 0, p.Length - 2);
+            float z = Mathf.Lerp(p[i], p[i + 1], Mathf.Clamp01(f - i));
+            return z > RemapFrom ? RemapFrom + (z - RemapFrom) * remapWeapon : z;
+        }
+
+        /// <summary>The game body's thrown weapon and the far anchors (after the timeline wrote them).</summary>
+        void RemapUnit()
+        {
+            if (remap == null)
+                return;
+            foreach (var g in remapGhost)
+                RemapOne(g, remapWeapon);
+            foreach (var a in remapAnchorList)
+                RemapOne(a, remapAnchors);
+        }
+
+        /// <summary>
+        /// Her thrown weapon put where its flight has it now - before the fight reads where it is: the skill's timeline, just
+        /// evaluated, may have posed it back where the clip has it (Kart's axe was hit-tested 0.9 m short of where it was drawn).
+        /// </summary>
+        public void PlaceThrownWeapon()
+        {
+            if (remap != null && remapBone != null)
+                RemapOne(remapBone, remapWeapon, FlightAhead());
+        }
+
+        /// <summary>Where the middle of her thrown weapon is now (world), or null when the skill throws none.</summary>
+        public Vector3? ThrownWeaponPoint(RangedSkill r)
+        {
+            var bone = ThrownWeaponBone(r);
+            return bone != null ? bone.TransformPoint(r.weaponCentre) : (Vector3?)null;
+        }
+
+        /// <summary>The bone of her thrown weapon (it spins about it: its middle swings round it in flight), or null.</summary>
+        public Transform ThrownWeaponBone(RangedSkill r)
+        {
+            if (r == null || !r.IsThrow)
+                return null;
+            if (weaponRoots == null)
+                FindWeaponRoots();
+            return remapBone != null && remap == r ? remapBone : WeaponBone(r.weapon);
+        }
+
+        /// <summary>A weapon's bone by name: one of the weapon roots, else any bone of her model so named.</summary>
+        Transform WeaponBone(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return null;
+            if (weaponRoots == null)
+                FindWeaponRoots();
+            return weaponRoots.FirstOrDefault(w => w.name == name)
+                ?? (animator != null ? animator.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == name) : null);
+        }
 
         /// <summary>
         /// The guard she stands in between moves, in place of the motion pack's and her strike pack's (user 10-11 "luf还原ROE里的姿势吧":
@@ -876,6 +1016,9 @@ namespace RoeFighter.Fight
             // a DOA6 character's visible cloth (skirt, sleeves): rebuilt from its control points, whichever solver moved them
             if (doaRig != null)
                 doaRig.RebuildSurfaces();
+            // a ranged skill's thrown weapon flies as far as the opponent stood (BeginRemap)
+            if (remap != null && remapBone != null)
+                RemapOne(remapBone, remapWeapon, FlightAhead());
         }
 
         // ---- cloth (RoeClothBackends): skirts, hair, chains, breasts
@@ -1430,10 +1573,12 @@ namespace RoeFighter.Fight
                 activeDirector.Stop();
                 activeDirector = null;
                 lingering = false;
+                EndRemap();
                 return;
             }
             activeDirector.time = lingerTime;
             activeDirector.Evaluate();
+            RemapUnit();        // (a ranged skill's far effects stay where it reached while they play out)
         }
 
         /// <summary>Start (or keep showing) a skill's timeline at a time; null stops it.</summary>
@@ -1443,16 +1588,19 @@ namespace RoeFighter.Fight
             var director = action == null ? null : directors.FirstOrDefault(d => d.action == action)?.director;
             if (director != activeDirector)
             {
+                EndRemap();         // another skill (or none): the last one's far end back where the game has it
                 if (activeDirector != null)
                     activeDirector.Stop();
                 activeDirector = director;
                 if (director != null)
                     director.RebuildGraph();
             }
+            timelineTime = director != null ? time : -1f;
             if (director == null)
                 return;
             director.time = Mathf.Clamp(time, 0f, (float)director.duration);
             director.Evaluate();
+            RemapUnit();
         }
 
         /// <summary>

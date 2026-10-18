@@ -1,0 +1,78 @@
+{
+ "id": "eve_nikke06",
+ "note": "Eve's Cooling Suit (Alice), the NIKKE collaboration (CH_P_EVE_Nikke_06, DLC_2), on her nude base (Assets/SB/eve_nude, as eve09 and eve37). The suit is one mesh in three materials: UV1 the pink bodysuit, the socks, the trainers and the gloves; UV2 the puffy jacket, its collar, the straps and the ring on her back; the SUPERB decal on her thigh (cut out by its alpha, Masked in her game). It covers her all over - no skin of hers in it to replace: the base is drawn under each opaque piece once that piece is off (reveal). Stage 1: the jacket and its collar (the outer layer, the most to see go). Stage 2: the straps, the ring on her back and the decal. Stage 3: the trainers with the socks, and the gloves. Stage 4: the bodysuit. The first rule that matches a piece decides; the straps' and the collar's bones are matched before the jacket's material.",
+ "outfit": [
+  {
+   "renderer": "Eve_Body_Mesh_01",
+   "submesh": 0
+  },
+  {
+   "renderer": "Eve_Body_Mesh_01",
+   "submesh": 1
+  },
+  {
+   "renderer": "Eve_Body_Mesh_01",
+   "submesh": 2
+  }
+ ],
+ "nude": {
+  "prefab": "Assets/SB/eve_nude/eve_nude.fbx",
+  "renderer": "Eve_Body_Mesh_01",
+  "submesh": 0,
+  "material": "Assets/SB/eve_nude/materials/SkinEve.mat",
+  "attachTo": "Eve_Body_Mesh_01",
+  "replace": [],
+  "pose": "bones",
+  "reveal": true
+ },
+ "groups": [
+  {
+   "name": "decal",
+   "title": "腿上的字",
+   "stage": 2,
+   "material": "Decal"
+  },
+  {
+   "name": "straps",
+   "title": "带子和背后的环",
+   "stage": 2,
+   "together": true,
+   "bone": "^Ab-(Fr-SuiteA|Bk-Ribbon|Spine2-Bk-Ring|[LR]-Deltoid-Fr-String|Axup)|^Ab_Drone"
+  },
+  {
+   "name": "collar",
+   "title": "耳机和领子",
+   "stage": 1,
+   "together": true,
+   "bone": "^(Bip001 (Neck|Head)|Ab-[LR]-NeckFrill|Ab-NeckSub)"
+  },
+  {
+   "name": "jacket",
+   "title": "外套",
+   "stage": 1,
+   "cloth": true,
+   "together": true,
+   "material": "UV2"
+  },
+  {
+   "name": "shoes",
+   "title": "球鞋和袜子",
+   "stage": 3,
+   "bone": "(Foot|Toe0|Ankle|Calf)"
+  },
+  {
+   "name": "gloves",
+   "title": "手套",
+   "stage": 3,
+   "bone": "^(Bip001 [LR] (Hand|Finger)|Ab-[LR]-Forearm)"
+  },
+  {
+   "name": "suit",
+   "title": "紧身衣",
+   "stage": 4,
+   "cloth": true,
+   "together": true,
+   "material": "UV1"
+  }
+ ]
+}

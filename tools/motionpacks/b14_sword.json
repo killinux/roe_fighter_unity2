@@ -1,0 +1,23 @@
+{
+  "name": "b14_sword",
+  "title": "Crane Kart: sword strikes",
+  "note": "b14's own strikes with the long sword in her right hand (10-17; she fought with the motion pack's punches since joining on 10-11, her sword only in her game's own clips), as Inase's a08_sword and Kart's b10_axe. Her game's battle stance holds the sword reversed, the blade up along her forearm; in every swing of her skills she turns it into a forward grip, so the grip is the one she cuts with (tools/roe/b14_grip.json, skill_01 frames 18-48; RoeGrips on Wp_01, the sword's own bone - Bip001 Prop1 and Wp_01..04 only the battle rig has, grafted). Picked from b14_sword_candidates.json (out/b14_sword_candidates.mp4): A the fast cut and the low one that end her skill_01's dash; B the leap of skill_01, the blade sweeping along the floor as she takes off (Low: block crouching); C the turn of her skill_02 - the blade over her head and on into a thrust at her chest's height (High: it passes over a crouching foe); D Vindictus' Attack_Strong03b, a flying turn with a cut across as she lands (knocks down; neither Fiona's, Inase's nor b10's). Each hits while the tip sweeps through the front (\"hit\", clip seconds, from RoeMotionPacks.Import -roeTips: the farthest, fastest stretch; measured whole, the tip of a 1.2 m sword is over 5 m/s nearly all the time). who / src / zh are notes for people and the videos.",
+  "source": "Rise of Eros (b14 skill_01, skill_02); Vindictus: Defying Fate 2024-03 pre-alpha (Fiona's AnimSequences, Assets/VDF/fio005/anims)",
+  "license": "game data - personal use only, never committed or shared",
+  "folder": "Assets/VDF/fio005/anims",
+  "humanoid": true,
+  "strikesOnly": true,
+  "grip": true,
+  "bladeShare": 0.35,
+  "measureOn": "b14",
+  "strikes": [
+    { "button": "A", "name": "cr_twin", "who": "Crane Kart", "zh": "两连斩", "src": "ROE skill_01 0.6–1.3 秒", "speed": 1.0, "from": 0.6, "to": 1.3, "hit": [0.06, 0.17], "inPlace": true, "level": "Mid",
+      "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_01.anim", "bone": "RightHand" },
+    { "button": "B", "name": "cr_leap", "who": "Crane Kart", "zh": "跃起斩", "src": "ROE skill_01 0.2–0.8 秒", "speed": 1.0, "from": 0.2, "to": 0.8, "hit": [0.05, 0.16], "inPlace": true, "level": "Low",
+      "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_01.anim", "bone": "RightHand" },
+    { "button": "C", "name": "cr_turn_thrust", "who": "Crane Kart", "zh": "回身刺", "src": "ROE skill_02 1.15–2.0 秒", "speed": 1.0, "from": 1.15, "to": 2.0, "hit": [0.54, 0.66], "inPlace": true, "level": "High",
+      "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_02.anim", "bone": "RightHand" },
+    { "button": "D", "name": "cr_flip", "who": "Vindictus", "zh": "翻身斩", "src": "Fiona 重击 3b（Attack_Strong03b）", "speed": 1.2, "to": 1.45, "hit": [0.92, 1.10], "inPlace": true, "level": "Mid",
+      "knockdown": true, "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong03b.anim", "bone": "RightHand" }
+  ]
+}

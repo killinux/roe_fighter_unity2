@@ -1,0 +1,28 @@
+{
+  "id": "eve37",
+  "note": "Eve's Office Style on her nude base (Assets/SB/eve_nude: the EveOriginalProportions mod's body, SbFighter.BuildBase), carried onto the outfit's bind pose by its bones (her hips stand 1.1 cm otherwise than the base's) and drawn under each opaque piece only once that piece is off (RoeNudeBody pose / reveal). The base body skin of the outfit (submesh 2) is what the nude replaces. Stage 1: the tie and the straps. Stage 2: the pleated skirt with its waistband, belt loops and buttons (small pieces of the shirt's material between 1.05 and 1.21 m). Stage 3: the shirt and its collar. Stage 4: what is left of the lower outfit. Stays on: the white platform heels; inside them the base takes the shape of the outfit's own feet (fit: its flat bare feet came out through the shoes). The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "Eve_Body_Mesh_01", "submesh": 0 },
+    { "renderer": "Eve_Body_Mesh_01", "submesh": 1 }
+  ],
+  "nude": {
+    "prefab": "Assets/SB/eve_nude/eve_nude.fbx",
+    "renderer": "Eve_Body_Mesh_01",
+    "submesh": 0,
+    "material": "Assets/SB/eve_nude/materials/SkinEve.mat",
+    "attachTo": "Eve_Body_Mesh_01",
+    "replace": [ { "renderer": "Eve_Body_Mesh_01", "submesh": 2 } ],
+    "pose": "bones",
+    "reveal": true,
+    "fit": true
+  },
+  "groups": [
+    { "name": "shoes", "title": "鞋", "stage": 0, "bone": "(Foot|Toe0|Calf-Tw)" },
+    { "name": "tie", "title": "领带", "stage": 1, "cloth": true, "together": true, "anyBone": "Necktie", "anyShare": 0.2 },
+    { "name": "straps", "title": "吊带", "stage": 1, "cloth": true, "together": true, "bone": "String" },
+    { "name": "skirt", "title": "百褶裙", "stage": 2, "cloth": true, "together": true, "anyBone": "Skirt", "anyShare": 0.2 },
+    { "name": "skirt band", "title": "裙腰和扣子", "stage": 2, "together": true, "material": "Upper", "bone": "^Bip001 (Spine|Spine1|Pelvis)$", "lowestAbove": 1.05, "lowestBelow": 1.21, "maxTriangles": 400 },
+    { "name": "shirt", "title": "衬衫", "stage": 3, "cloth": true, "together": true, "material": "Upper" },
+    { "name": "lower", "title": "下装", "stage": 4, "cloth": true, "together": true, "material": "Lower" }
+  ]
+}

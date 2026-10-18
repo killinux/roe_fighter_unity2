@@ -1,0 +1,27 @@
+{
+  "id": "g04",
+  "note": "Luf's battle suit on the family's nude body (g01, RoeNudeBody: it replaces the suit's skin, which the game cut away under the top, gloves and panties), so everything but the shoes can come off. Stage 1: the outer layers of the skirt - the front panel, the long ribbon on the left, the back panel with its fur hem, the ornaments and tassels. Stage 2: the skirt itself (the long front and back panels with the band round the waist). Stage 3: the top, the collar, the belt and the gloves. Stage 4: the panties. Stays on: the shoes (her feet stand at another heel angle than the base's: the body under them is left out) and the hair ornaments. The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "pc_g04_hd_body", "submesh": 2 }
+  ],
+  "nude": {
+    "prefab": "Assets/ROE/g01/chara_bare_pc_g01_nk_prelude/pc_g01_nk.prefab",
+    "renderer": "pc_g01_nk_body",
+    "submesh": 0,
+    "material": "Assets/ROE/g01/chara_mat_bare_pc_g01_nk_prelude/pc_g01_nk_body.mat",
+    "attachTo": "pc_g04_hd_body",
+    "replace": [ { "renderer": "pc_g04_hd_body", "submesh": 1 } ]
+  },
+  "groups": [
+    { "name": "front panel", "title": "前片", "stage": 1, "cloth": true, "together": true, "bone": "^Skirt_front" },
+    { "name": "left ribbon", "title": "左飘带", "stage": 1, "cloth": true, "together": true, "bone": "^Skirt_Left" },
+    { "name": "back panel", "title": "后片和下摆毛边", "stage": 1, "cloth": true, "together": true, "bone": "^Skirt_Back" },
+    { "name": "skirt ornaments", "title": "裙饰和流苏", "stage": 1, "bone": "^(Skirt_Dec|Skirt_dec|dec_wrist)" },
+    { "name": "skirt", "title": "主裙", "stage": 2, "cloth": true, "together": true, "bone": "^Bip001 Pelvis$", "lowestBelow": 0.5 },
+    { "name": "panties", "title": "内裤", "stage": 4, "together": true, "bone": "^Bip001 Pelvis$" },
+    { "name": "shoes", "title": "鞋", "stage": 0, "bone": "(Foot|Toe0|CalfTwist)" },
+    { "name": "hair ornaments", "title": "头饰", "stage": 0, "bone": "^(Bip001 Head|dec_hari)" },
+    { "name": "gloves", "title": "手套", "stage": 3, "bone": "^Bip001 [LR] (Hand|ForeTwist|Finger)" },
+    { "name": "top", "title": "上衣、项圈和腰带", "stage": 3, "cloth": true, "together": true, "bone": "^(Bip001 (Spine|Spine1|Spine2|Neck)$|shoulder|[LR]_upper_dec)" }
+  ]
+}

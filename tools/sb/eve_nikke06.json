@@ -1,0 +1,78 @@
+{
+ "id": "eve_nikke06",
+ "name": "EVE",
+ "outfit": "Cooling Suit (Alice, NIKKE)",
+ "source": "Stellar Blade",
+ "pack": "sb_eve",
+ "stance": "",
+ "feet": "",
+ "game": [
+  {
+   "name": "hurt",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/Result_Hit_Stand_Light_Fw.anim"
+  },
+  {
+   "name": "die",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/Result_Knock_Down_Backward.anim"
+  },
+  {
+   "name": "rip",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/Result_State_KnockDown_L.anim"
+  },
+  {
+   "name": "getup",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/Getup_Center.anim"
+  },
+  {
+   "name": "react_02",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/P_Eve_Sword_Normal_Buff1.anim"
+  },
+  {
+   "name": "idle_02",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/P_Eve_Sword_Burst_MeleeCombatBuff1.anim"
+  },
+  {
+   "name": "skill_01",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/P_Eve_Sword_Beta_ChainStab1_Ex.anim"
+  },
+  {
+   "name": "skill_02",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/P_Eve_Sword_Beta_ChargeSlash2_Ex.anim"
+  },
+  {
+   "name": "skill_03",
+   "clip": "Assets/SB/eve_nikke06/anims/inplace/P_Eve_Sword_Burst_SpinAttack1.anim"
+  }
+ ],
+ "skills": [
+  {
+   "action": "skill1",
+   "clip": "skill_01",
+   "hits": [
+    0.8,
+    1.0,
+    1.42
+   ],
+   "radius": 1.6
+  },
+  {
+   "action": "skill2",
+   "clip": "skill_02",
+   "hits": [
+    0.58,
+    0.92
+   ],
+   "radius": 1.0
+  },
+  {
+   "action": "skill3",
+   "clip": "skill_03",
+   "hits": [
+    0.55,
+    1.3,
+    1.88
+   ],
+   "radius": 1.0
+  }
+ ]
+}

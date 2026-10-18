@@ -1,0 +1,28 @@
+{
+  "name": "a08_sword_candidates",
+  "title": "Inase: greatsword strikes to pick from",
+  "note": "User 10-06: \"动作有拿巨剑的普通攻击么，给inase拿着长剑的找一些普通攻击，可以看roe中是否有现成的，或者Universal Fighting Engine 2 Source v2.7.0a 里是否有\". ROE has no normal attacks at all (each outfit: stance, three skills, hurt, fall, lie); UFE 2's 3D demo characters are unarmed and its Ellen is a 2D sprite. So: every strike of Fiona's own game (Vindictus: one-handed longsword, right hand) and the one big right-handed cut in Inase's own skill_01 (frames 66-100 of 150, the blade's tip at up to 67 m/s), all on Inase with her greatsword in her right hand (grip: RoeGrips on her prefab, tools/roe/a08_grip.json - the grip she cuts with in skill_01). Full clips (Vindictus' attacks keep their combo windows, 2-2.8 s): the picked ones get cut to their swing. Picked: a08_sword.json (A sw_a2, B sw_a3, C sw_a4, D sw_inase_cut - none of Fiona's own four; sw_counter, sw_hs_counter leap out of place, sw_sprint barely swings, sw_finish swings at 0.9 s).",
+  "source": "Vindictus: Defying Fate (Fiona's AnimSequences, Assets/VDF/fio005/anims); Rise of Eros (a08 skill_01)",
+  "license": "game data, personal use only",
+  "folder": "Assets/VDF/fio005/anims",
+  "humanoid": true,
+  "strikesOnly": true,
+  "grip": true,
+  "bladeShare": 0.35,
+  "measureOn": "a08",
+  "strikes": [
+    { "button": "A", "name": "sw_a1", "zh": "Fiona 连击 1", "src": "Vindictus Attack01", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack01.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_a2", "zh": "Fiona 连击 2", "src": "Vindictus Attack02", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack02.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_a3", "zh": "Fiona 连击 3", "src": "Vindictus Attack03", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack03.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_a4", "zh": "Fiona 连击 4", "src": "Vindictus Attack04", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack04.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_s1", "zh": "Fiona 重击 1", "src": "Vindictus Attack_Strong01", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong01.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_s2", "zh": "Fiona 重击 2", "src": "Vindictus Attack_Strong02", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong02.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_s3", "zh": "Fiona 重击 3（突刺）", "src": "Vindictus Attack_Strong03", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong03.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_s4", "zh": "Fiona 重击 4（踢加斩）", "src": "Vindictus Attack_Strong04", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong04.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_sprint", "zh": "Fiona 冲刺重击", "src": "Vindictus Sprint_Attack_Strong", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Sprint_Attack_Strong.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_counter", "zh": "Fiona 格挡反击", "src": "Vindictus Guard_Counter", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Counter.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_hs_counter", "zh": "Fiona 霸体反击", "src": "Vindictus Heavystander_Counter", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Heavystander_Counter.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "sw_finish", "zh": "Fiona 终结技", "src": "Vindictus Attack_Finish_Action", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Finish_Action.anim", "bone": "RightHand", "speed": 1.1, "to": 2.6, "inPlace": true },
+    { "button": "A", "name": "sw_inase_cut", "zh": "Inase 技能 1 的大挥砍", "src": "ROE a08 skill_01 2.1–3.4 秒", "clip": "Assets/RoeFighter/Generated/a08/humanoid/a08_skill_01.anim", "bone": "RightHand", "speed": 1.0, "from": 2.1, "to": 3.4, "inPlace": true }
+  ]
+}

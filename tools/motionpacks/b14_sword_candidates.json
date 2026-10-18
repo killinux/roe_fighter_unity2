@@ -1,0 +1,31 @@
+{
+  "name": "b14_sword_candidates",
+  "title": "Crane Kart: sword strikes to pick from",
+  "note": "b14 (CRANE KART, Kart's crane robe, in the fight since 10-11) holds a long sword (1.29 m, a tassel on the pommel) in her right hand in her game's battle stance, but boxed with the motion pack's punches: the sword showed only in her game's own clips (skills, intro, win). As Inase (a08_sword) and Kart's b10 (b10_axe): strikes with the sword in her hand. Her stance holds it reversed, the blade up along her forearm; in every swing of her skills she turns it about 160 degrees into a forward grip, so her grip (tools/roe/b14_grip.json, RoeGrips on Wp_01, the sword's own bone) is the one she cuts with in skill_01 (frames 18-48). Candidates: seven pieces of her own three skills (her game has no normal attacks) and every one-handed sword move of Vindictus' Fiona (right hand, forward grip) that Fiona, Inase and b10 do not use yet. Full Vindictus clips (combo windows 2-2.8 s); the picked ones get cut to their swing.",
+  "source": "Rise of Eros (b14 skill_01, skill_02, skill_03); Vindictus: Defying Fate (Fiona's AnimSequences, Assets/VDF/fio005/anims)",
+  "license": "game data, personal use only",
+  "folder": "Assets/VDF/fio005/anims",
+  "humanoid": true,
+  "strikesOnly": true,
+  "grip": true,
+  "bladeShare": 0.35,
+  "measureOn": "b14",
+  "strikes": [
+    { "button": "A", "name": "cr_leap", "zh": "她技能 1 的跃起斩", "src": "ROE b14 skill_01 0.2–0.8 秒", "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_01.anim", "bone": "RightHand", "speed": 1.0, "from": 0.2, "to": 0.8, "inPlace": true },
+    { "button": "A", "name": "cr_twin", "zh": "她技能 1 的两连斩", "src": "ROE b14 skill_01 0.6–1.3 秒", "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_01.anim", "bone": "RightHand", "speed": 1.0, "from": 0.6, "to": 1.3, "inPlace": true },
+    { "button": "A", "name": "cr_cut_sweep", "zh": "她技能 1 的劈下接低扫", "src": "ROE b14 skill_01 1.6–2.35 秒", "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_01.anim", "bone": "RightHand", "speed": 1.0, "from": 1.6, "to": 2.35, "inPlace": true },
+    { "button": "A", "name": "cr_rise_thrust", "zh": "她技能 2 的上撩接刺", "src": "ROE b14 skill_02 0.1–1.0 秒", "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_02.anim", "bone": "RightHand", "speed": 1.0, "from": 0.1, "to": 1.0, "inPlace": true },
+    { "button": "A", "name": "cr_turn_thrust", "zh": "她技能 2 的回身刺", "src": "ROE b14 skill_02 1.15–2.0 秒", "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_02.anim", "bone": "RightHand", "speed": 1.0, "from": 1.15, "to": 2.0, "inPlace": true },
+    { "button": "A", "name": "cr_low_sweep", "zh": "她技能 2 收尾的低扫", "src": "ROE b14 skill_02 2.3–3.1 秒", "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_02.anim", "bone": "RightHand", "speed": 1.0, "from": 2.3, "to": 3.1, "inPlace": true },
+    { "button": "A", "name": "cr_rising", "zh": "她超必杀开头的升空斩", "src": "ROE b14 skill_03 0.4–1.1 秒", "clip": "Assets/RoeFighter/Generated/b14/humanoid/b14_skill_03.anim", "bone": "RightHand", "speed": 1.0, "from": 0.4, "to": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_s1b", "zh": "Fiona 重击 1b", "src": "Vindictus Attack_Strong01b", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong01b.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_s2b", "zh": "Fiona 重击 2b", "src": "Vindictus Attack_Strong02b", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong02b.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_s3b", "zh": "Fiona 重击 3b", "src": "Vindictus Attack_Strong03b", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong03b.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_sk2", "zh": "Fiona 技能 2", "src": "Vindictus ActiveSkill02", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill02.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_sk2b", "zh": "Fiona 技能 2b", "src": "Vindictus ActiveSkill02b", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill02b.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_sk3b", "zh": "Fiona 技能 3b", "src": "Vindictus ActiveSkill03b", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill03b.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_sk4", "zh": "Fiona 技能 4", "src": "Vindictus ActiveSkill04", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill04.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_sk5", "zh": "Fiona 技能 5", "src": "Vindictus ActiveSkill05", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill05.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "cr_speedy", "zh": "Fiona 疾步重击", "src": "Vindictus SpeedyMove_Attack_Strong", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_SpeedyMove_Attack_Strong.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true }
+  ]
+}

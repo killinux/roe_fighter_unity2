@@ -1,0 +1,26 @@
+{
+  "id": "b14_outfit1",
+  "note": "ROE's menu showcase of this outfit (tools/roe_showcase.py): idle_02 loops; each timeline plays its react clip and one voice line (voiceAt: seconds into the clip). Audio extracted to Assets/ROE (not committed).",
+  "reactions": [
+    {
+      "timeline": "idle02_react01",
+      "clip": "react_01",
+      "length": 3.333,
+      "voice": "Voice_B_Kart_EMO_03",
+      "voiceAt": 0.0,
+      "voiceClip": "Voice_B_Kart_EMO_JP_03",
+      "voiceBundle": "voice_meta3d_japanese_pc_b04",
+      "audio": "Assets/ROE/b14_outfit1/showcase_voice/Voice_B_Kart_EMO_JP_03.wav"
+    },
+    {
+      "timeline": "idle02_react02",
+      "clip": "react_02",
+      "length": 3.5,
+      "voice": "Voice_B_Kart_EMO_06",
+      "voiceAt": 0.0,
+      "voiceClip": "Voice_B_Kart_EMO_JP_06",
+      "voiceBundle": "voice_meta3d_japanese_pc_b04",
+      "audio": "Assets/ROE/b14_outfit1/showcase_voice/Voice_B_Kart_EMO_JP_06.wav"
+    }
+  ]
+}

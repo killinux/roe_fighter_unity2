@@ -1,0 +1,109 @@
+{
+  "id": "b14",
+  "note": "Kart's crane robe (suit_kart_14, 2026-09-12) on the family's nude body (b01, RoeNudeBody: it replaces the suit's skin; the same surface, more coarsely made: along the normals 0 mm median, -2 / +1 mm at 5 / 95 %; her suit has no skin on her right upper arm under the robe, and the sheer sleeve over it hangs on the forearm in her game: ownWeights, there - her right upper arm and shoulder - the base keeps its own weights). The neck under the choker is the base's head (fill: what the suit's head lacks). The robe (body2), its sheer sleeve (body2_Transparency) and the sleeve's lining (body3) share seam points: one outfit entry per material, or the whole robe welds into one piece. Stage 1: the jewellery - the gold crown, the earrings, the choker with its pendant, the gold piece on her left breast and the shoulder piece. Stage 2: the red-crowned crane on her belt with the tassels and bead strings, and the long sheer right sleeve. Stage 3: the arm cover, the rings and the heels. Stage 4: the robe - its top over her right shoulder, the belt and all the panels - and the gold thong. The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    {
+      "renderer": "pc_b14_hd_Body01",
+      "material": "^pc_b14_hd_(outfit1_)?body1$"
+    },
+    {
+      "renderer": "pc_b14_hd_Body02",
+      "material": "^pc_b14_hd_(outfit1_)?body2$"
+    },
+    {
+      "renderer": "pc_b14_hd_Body02",
+      "material": "^pc_b14_hd_(outfit1_)?body2_Transparency$"
+    },
+    {
+      "renderer": "pc_b14_hd_Body02",
+      "material": "^pc_b14_hd_(outfit1_)?body3$"
+    },
+    {
+      "renderer": "pc_b14_hd_head",
+      "material": "^pc_b14_hd_(outfit1_)?body1$"
+    }
+  ],
+  "nude": {
+    "prefab": "Assets/ROE/b01/chara_bare_pc_b01_nk_tutorial/pc_b01_nk.prefab",
+    "renderer": "pc_b01_nk_body",
+    "submesh": 0,
+    "material": "Assets/ROE/b01/chara_mat_bare_pc_b01_nk_tutorial/pc_b01_nk_body.mat",
+    "attachTo": "pc_b14_hd_Body01",
+    "replace": [
+      {
+        "renderer": "pc_b14_hd_Body01",
+        "material": "^pc_b14_hd_(outfit1_)?skin$"
+      }
+    ],
+    "fill": [
+      {
+        "submesh": 1,
+        "missingFrom": [
+          {
+            "renderer": "pc_b14_hd_head",
+            "submesh": 0
+          }
+        ]
+      }
+    ],
+    "ownWeights": "^Bip001 R (UpperArm|Clavicle)$",
+    "ownOverSkin": true,
+    "ownMirror": true
+  },
+  "groups": [
+    {
+      "name": "jewellery",
+      "title": "头冠、耳坠和项圈",
+      "stage": 1,
+      "bone": "^(Accessory_|Earring_|Necklace_|Bip001 Head$|Bip001 Neck$)"
+    },
+    {
+      "name": "gold",
+      "title": "胸前的金饰和肩饰",
+      "stage": 1,
+      "bone": "^(Cuirass_|Pauldron_|Bip001 Breast_L02$)"
+    },
+    {
+      "name": "crane",
+      "title": "腰上的丹顶鹤",
+      "stage": 2,
+      "together": true,
+      "bone": "^Decoration_"
+    },
+    {
+      "name": "tassels",
+      "title": "流苏和珠串",
+      "stage": 2,
+      "bone": "^(Tassel_|Rope_)"
+    },
+    {
+      "name": "sleeve",
+      "title": "右边的长袖（纱）",
+      "stage": 2,
+      "cloth": true,
+      "together": true,
+      "material": "body2_Transparency|body3",
+      "bone": "^(Sleeve_|Bip001 R ForeTwist$)"
+    },
+    {
+      "name": "gloves",
+      "title": "袖套和戒指",
+      "stage": 3,
+      "bone": "^Bip001 [LR] (Forearm|ForeTwist|ForeTwist1|Hand|Finger)"
+    },
+    {
+      "name": "shoes",
+      "title": "高跟鞋",
+      "stage": 3,
+      "bone": "^Bip001 ([LR] (Calf|Foot|Toe0)|[LR]CalfTwist)"
+    },
+    {
+      "name": "robe",
+      "title": "长袍（上身、腰带、裙片）和金色丁字裤",
+      "stage": 4,
+      "cloth": true,
+      "together": true,
+      "bone": "^(Skirt_|Bip001 (Pelvis|Spine)$)"
+    }
+  ]
+}

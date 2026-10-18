@@ -1,0 +1,15 @@
+{
+  "name": "ufe_ethan",
+  "title": "UFE 2: Ethan",
+  "source": "Universal Fighting Engine 2 v2.7.0a (Asset Store), demo character Ethan of the 3D Fighter demo: Assets/UFE/Demos/Shared_Assets/Characters/Ethan/Animations (humanoid .anim, 60 fps); move set _3DFighter/Ethan_Stance_1 (Button1 Stand_N1, Button2 Stand_N2, Button3 Stand_N3, Forward+Button3 Stand_F3)",
+  "license": "Unity Asset Store EULA: personal use only, never committed (Assets/UFE is gitignored)",
+  "folder": "Assets/UFE/Demos/Shared_Assets/Characters/Ethan/Animations",
+  "humanoid": false,
+  "roles": { "guard": "E_Basic_Idle", "walk": "E_Basic_Walk_Forward", "walk_back": "-E_Basic_Walk_Back" },
+  "strikes": [
+    { "button": "A", "name": "ethan_n1", "clip": "E_Stand_N1" },
+    { "button": "B", "name": "ethan_n2", "clip": "E_Stand_N2" },
+    { "button": "C", "name": "ethan_n3", "clip": "E_Stand_N3" },
+    { "button": "D", "name": "ethan_f3", "clip": "E_Stand_F3" }
+  ]
+}

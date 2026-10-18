@@ -1,0 +1,15 @@
+{
+  "name": "ufe_kyle",
+  "title": "UFE 2: Robot Kyle",
+  "source": "Universal Fighting Engine 2 v2.7.0a (Asset Store), demo character Robot Kyle of the 3D Fighter demo: Assets/UFE/Demos/Shared_Assets/Characters/Robot_Kyle/Animations (humanoid .anim, 30 fps); buttons and speeds as UFE's move set _3DFighter/Robot_Kyle (Button1 Light Punch x1.8, Button4 Light Kick x1.4, Button2 Heavy Punch, Button5 Heavy Kick)",
+  "license": "Unity Asset Store EULA: personal use only, never committed (Assets/UFE is gitignored)",
+  "folder": "Assets/UFE/Demos/Shared_Assets/Characters/Robot_Kyle/Animations",
+  "humanoid": false,
+  "roles": { "guard": "IdleStanding", "walk": "MoveForward", "walk_back": "-MoveForward", "run": "Run_Loop" },
+  "strikes": [
+    { "button": "A", "name": "kyle_light_punch", "clip": "PunchStandingLight", "speed": 1.8 },
+    { "button": "B", "name": "kyle_light_kick", "clip": "KickStandingLight", "speed": 1.4 },
+    { "button": "C", "name": "kyle_heavy_punch", "clip": "PunchStandingHeavy", "speed": 1.0 },
+    { "button": "D", "name": "kyle_heavy_kick", "clip": "KickStandingHeavy", "speed": 1.0 }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "m02",
+  "note": "Amano's second suit (suit_amano_2) on the family's nude body (m01, RoeNudeBody). Her black vines are painted into the suit's skin texture (pc_m02_hd_skin uses body1's albedo), so the suit's skin is itself the last piece (each material is its own outfit entry: the skin, the tentacles and the wings share seam points and would weld into one piece): it fades out where it is (fade: nothing flies) and the nude body under it is drawn once it is off (reveal). Stage 1: the dark tentacle arc over her head and behind her (body2). Stage 2: the glowing blue wings with their black frames (body3). Stage 3: the vines - the painted skin fades and the bare body is left. The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "pc_m02_hd_body", "material": "^pc_m02_hd_body2$" },
+    { "renderer": "pc_m02_hd_body", "material": "^pc_m02_hd_body3$" },
+    { "renderer": "pc_m02_hd_body", "material": "^pc_m02_hd_skin$" }
+  ],
+  "nude": {
+    "prefab": "Assets/ROE/m01/chara_bare_pc_m01_nk/pc_m01_nk.prefab",
+    "renderer": "pc_m01_nk_body",
+    "submesh": 0,
+    "material": "Assets/ROE/m01/chara_mat_bare_pc_m01_nk/pc_m_nk_body.mat",
+    "attachTo": "pc_m02_hd_body",
+    "replace": [],
+    "reveal": true
+  },
+  "groups": [
+    { "name": "tentacles", "title": "触手环", "stage": 1, "together": true, "material": "^pc_m02_hd_body2$" },
+    { "name": "wings", "title": "蓝色翅膀", "stage": 2, "cloth": true, "together": true, "material": "^pc_m02_hd_body3$" },
+    { "name": "vines", "title": "身上的藤蔓（画在皮肤上，原地淡出）", "stage": 3, "fade": true, "together": true, "material": "^pc_m02_hd_skin$" }
+  ]
+}

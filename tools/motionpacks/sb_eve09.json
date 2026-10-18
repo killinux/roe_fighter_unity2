@@ -1,0 +1,73 @@
+{
+ "name": "sb_eve09",
+ "title": "Eve (Stellar Blade)",
+ "note": "tools/sb_own_moves.py: eve_nikke06's pack (tools/motionpacks/sb_eve.json) on eve09's own clips (the sword holder's path starts with her armature's name). Eve's own moves from Stellar Blade (user 10-17: \"用 eve里自己的招式\"): her AnimSequences exported by the CUE4Parse CLI (tools/sb_anims.py), read onto her own skeleton and turned humanoid by SbAnims, the Blood Edge in her right hand on the holder her clips key (the game's Bip001 Prop1 against her hand). Stance: her lock-on battle idle (the sword held low behind her); walk / back / run: her lock-on walks and run. Strikes, picked from 19 candidates (tools/motionpacks/sb_eve_candidates.json, out/eve_nikke06_sword_candidates.mp4): A the first cut of her light combo (a dash and a level cut), B the second (she turns and cuts low from a deep lunge: low), C her strong attack 4 (two cuts), D the ground launcher Sword_Ground_Upper (a lunge and a rising cut: knocks down) - each cut where its swing ends; the game's lunges (1-2 m on Root) are taken out of the clip and given back by the fight (Move.travel). Her hits, knockdown, lying, get-up, intro, win and specials are in tools/sb/eve_nikke06.json.",
+ "strikesOnly": true,
+ "bladeShare": 0.35,
+ "measureOn": "eve09",
+ "source": "Stellar Blade (Shift Up): Eve's AnimSequences (CH_P_EVE_01/Animation), CUE4Parse .psa -> SbAnims",
+ "license": "game data - personal use only, never committed or shared",
+ "folder": "Assets/SB/eve09/anims",
+ "humanoid": true,
+ "roles": {
+  "guard": "Assets/SB/eve09/anims/Proto_Lockon_Battle_Idle.anim",
+  "walk": "Assets/SB/eve09/anims/Proto_Lockon_Walk_Forward.anim",
+  "walk_back": "Assets/SB/eve09/anims/Proto_Lockon_Walk_Backward.anim",
+  "run": "Assets/SB/eve09/anims/Proto_Lockon_Run_Forward.anim"
+ },
+ "strikes": [
+  {
+   "button": "A",
+   "name": "eve_dash_cut",
+   "zh": "冲步横斩",
+   "src": "P_Eve_Sword_Normal_LightAttack1_Connect1_Rfront 0–0.75 s",
+   "clip": "Assets/SB/eve09/anims/P_Eve_Sword_Normal_LightAttack1_Connect1_Rfront.anim",
+   "bone": "RightHand",
+   "speed": 1.0,
+   "from": 0.0,
+   "to": 0.75,
+   "inPlace": true
+  },
+  {
+   "button": "B",
+   "name": "eve_low_cut",
+   "zh": "回身低斩",
+   "src": "P_Eve_Sword_Normal_LIghtAttack2_2 0–1.1 s",
+   "clip": "Assets/SB/eve09/anims/P_Eve_Sword_Normal_LIghtAttack2_2.anim",
+   "bone": "RightHand",
+   "speed": 1.0,
+   "from": 0.0,
+   "to": 1.1,
+   "inPlace": true
+  },
+  {
+   "button": "C",
+   "name": "eve_twin_cut",
+   "zh": "两段斩",
+   "src": "P_Eve_Sword_Normal_StrongAttack4 0–1.2 s",
+   "clip": "Assets/SB/eve09/anims/P_Eve_Sword_Normal_StrongAttack4.anim",
+   "bone": "RightHand",
+   "speed": 1.0,
+   "from": 0.0,
+   "to": 1.2,
+   "inPlace": true
+  },
+  {
+   "button": "D",
+   "name": "eve_rising_cut",
+   "zh": "挑空斩",
+   "src": "Sword_Ground_Upper 0–1.0 s",
+   "clip": "Assets/SB/eve09/anims/Sword_Ground_Upper.anim",
+   "bone": "RightHand",
+   "speed": 1.0,
+   "from": 0.0,
+   "to": 1.0,
+   "hit": [
+    0.32,
+    0.46
+   ],
+   "inPlace": true,
+   "knockdown": true
+  }
+ ]
+}

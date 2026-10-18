@@ -1,0 +1,26 @@
+{
+  "id": "b10",
+  "note": "Kart's red crop jacket suit on the family's nude body (b01, RoeNudeBody: it replaces the suit's skin; the suit's skin is cut out of this very body, gap 0 mm), so everything can come off. The neck under the turtleneck is the base's head (fill: what the suit's head lacks). Stage 1: the gear - both holsters with their thigh straps and the ropes to the belt, the pouch on the left upper arm. Stage 2: the red jacket with the straps and buckles across the chest. Stage 3: the gloves and the boots with their straps. Stage 4: the denim shorts with the belts. The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "pc_b10_hd_body2" }
+  ],
+  "nude": {
+    "prefab": "Assets/ROE/b01/chara_bare_pc_b01_nk_tutorial/pc_b01_nk.prefab",
+    "renderer": "pc_b01_nk_body",
+    "submesh": 0,
+    "material": "Assets/ROE/b01/chara_mat_bare_pc_b01_nk_tutorial/pc_b01_nk_body.mat",
+    "attachTo": "pc_b10_hd_body1",
+    "replace": [ { "renderer": "pc_b10_hd_body1", "submesh": 0 } ],
+    "fill": [ { "submesh": 1, "missingFrom": [ { "renderer": "pc_b10_nk_head", "submesh": 0 } ] } ]
+  },
+  "groups": [
+    { "name": "holsters", "title": "枪套", "stage": 1, "bone": "^holster_" },
+    { "name": "thigh straps", "title": "腿上的绑带", "stage": 1, "bone": "^Bip001 [LR]ThighTwist" },
+    { "name": "holster ropes", "title": "枪套的挂绳", "stage": 1, "bone": "^Bip001 Pelvis$", "anyBone": "^Rope_", "anyShare": 0.1 },
+    { "name": "arm pouch", "title": "左臂小包", "stage": 1, "bone": "^Bip001 [LR]UpArmTwist" },
+    { "name": "jacket", "title": "红色短夹克和胸前皮带", "stage": 2, "cloth": true, "bone": "^Bip001 (Spine|Spine1|Spine2|Neck)$" },
+    { "name": "gloves", "title": "手套", "stage": 3, "bone": "^Bip001 [LR] (Hand|ForeTwist|Finger)" },
+    { "name": "boots", "title": "靴子", "stage": 3, "bone": "^Bip001 [LR] (Calf|Foot|Toe0)" },
+    { "name": "shorts", "title": "牛仔短裤和腰带", "stage": 4, "cloth": true, "together": true, "bone": "^Bip001 Pelvis$" }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+ "name": "doa6_kas",
+ "title": "Kasumi (DOA6)",
+ "note": "Kasumi's own moves (user 10-04: \"doa6中的 Kasumi也加入一个角色\"). BVH from Dead or Alive 6's RRPreview.rdb: ripper_tpose scripts/doa6/g2a_bvh.py --g1m KAS_COS_001.g1m (_work/mocap/doa6_kas, picked from out/motion_sheets/doa6_kas_candidates; her reactions, knockdown and lying are the game's shared CMN clips). Strikes: A 00051 left jab, B 00055 side kick, C 00185 rising uppercut, D 00054 high roundhouse; the stance 00000 is her guard. The other segments are her game clips (tools/doa/kas.json): specials 00081 somersault kick, 00073 jumping scissor kick, 01120 handspring dive; hurt CMN00130, knockdown CMN00081, lying CMN00102, intro 07010, win 07020. DOA6 clips face +Z, the opponent (face 0).",
+ "strikesOnly": true,
+ "measureOn": "kas",
+ "source": "Dead or Alive 6 (Koei Tecmo): Kasumi's moves (KAS*) and the shared reactions (CMN*) from RRPreview.rdb, decoded by ripper_tpose scripts/doa6 (g2a.py, g2a_bvh.py)",
+ "license": "game data - personal use only, never committed or shared",
+ "roles": {
+  "guard": "kas_00000"
+ },
+ "bvh": {
+  "folder": "_work/mocap/doa6_kas",
+  "reference": "KAS00000_KAS.bvh",
+  "restFrame": -1,
+  "scale": 0.01,
+  "segments": [
+   {
+    "name": "kas_00000",
+    "file": "KAS00000_KAS.bvh",
+    "loop": true,
+    "minCycle": 0.6,
+    "maxCycle": 2.6,
+    "face": "0"
+   },
+   {
+    "name": "kas_00051",
+    "file": "KAS00051_KAS.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "kas_00055",
+    "file": "KAS00055_KAS.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "kas_00185",
+    "file": "KAS00185_KAS.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "kas_00054",
+    "file": "KAS00054_KAS.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "kas_00081",
+    "file": "KAS00081_KAS.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "kas_00073",
+    "file": "KAS00073_KAS.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "kas_01120",
+    "file": "KAS01120_KAS.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00130",
+    "file": "CMN00130_CMN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00841",
+    "file": "CMN00841_CMN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00039",
+    "file": "CMN00039_CMN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00081",
+    "file": "CMN00081_CMN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00102",
+    "file": "CMN00102_CMN.bvh",
+    "loop": true,
+    "minCycle": 0.2,
+    "maxCycle": 0.42,
+    "face": "0"
+   },
+   {
+    "name": "cmn_00370",
+    "file": "CMN00370_CMN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "kas_07010_ent",
+    "file": "KAS07010_ENT.bvh",
+    "face": "0"
+   },
+   {
+    "name": "kas_07020_win",
+    "file": "KAS07020_WIN.bvh",
+    "face": "0"
+   }
+  ]
+ },
+ "strikes": [
+  {
+   "button": "A",
+   "name": "kas_00051",
+   "clip": "kas_00051",
+   "inPlace": true
+  },
+  {
+   "button": "B",
+   "name": "kas_00055",
+   "clip": "kas_00055"
+  },
+  {
+   "button": "C",
+   "name": "kas_00185",
+   "clip": "kas_00185",
+   "inPlace": true
+  },
+  {
+   "button": "D",
+   "name": "kas_00054",
+   "clip": "kas_00054"
+  }
+ ]
+}

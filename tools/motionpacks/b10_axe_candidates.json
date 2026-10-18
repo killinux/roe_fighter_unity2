@@ -1,0 +1,29 @@
+{
+  "name": "b10_axe_candidates",
+  "title": "Kart: axe strikes to pick from",
+  "note": "User 10-06: \"把ROE中的卡地亚也加入战斗，一个拿斧子和枪的上衣是红色的卡地亚\" - 卡地亚 is Kart, the red crop jacket with the axe and the pistols is b10 (in the fight since 10-03, boxing with the motion pack's punches; her axe and pistols only showed in her skills). In her game she holds the hatchet in her right hand and keeps the pistols in the holsters on her thighs; in her skills she throws the axe and the pistols fly by themselves and shoot - she never holds them. So her strikes are the axe's: every strike of Vindictus' one-handed sword (Fiona's, right hand - a hatchet swings the same way) and two pieces of her own skills where she throws the axe (it stays in her hand here: RoeGrips), on b10 with the axe in her right hand (tools/roe/b10_grip.json). Full clips; the picked ones get cut to their swing (as a08_sword).",
+  "source": "Vindictus: Defying Fate (Fiona's AnimSequences, Assets/VDF/fio005/anims); Rise of Eros (b10 skill_01, skill_03)",
+  "license": "game data, personal use only",
+  "folder": "Assets/VDF/fio005/anims",
+  "humanoid": true,
+  "strikesOnly": true,
+  "grip": true,
+  "bladeShare": 0.35,
+  "measureOn": "b10",
+  "strikes": [
+    { "button": "A", "name": "ax_a1", "zh": "Fiona 连击 1", "src": "Vindictus Attack01", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack01.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_a2", "zh": "Fiona 连击 2", "src": "Vindictus Attack02", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack02.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_a3", "zh": "Fiona 连击 3", "src": "Vindictus Attack03", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack03.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_a4", "zh": "Fiona 连击 4", "src": "Vindictus Attack04", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack04.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_s1", "zh": "Fiona 重击 1", "src": "Vindictus Attack_Strong01", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong01.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_s2", "zh": "Fiona 重击 2", "src": "Vindictus Attack_Strong02", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong02.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_s3", "zh": "Fiona 重击 3（突刺）", "src": "Vindictus Attack_Strong03", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong03.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_s4", "zh": "Fiona 重击 4（踢加斩）", "src": "Vindictus Attack_Strong04", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong04.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_sprint", "zh": "Fiona 冲刺重击", "src": "Vindictus Sprint_Attack_Strong", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Sprint_Attack_Strong.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_counter", "zh": "Fiona 格挡反击", "src": "Vindictus Guard_Counter", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Counter.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_hs_counter", "zh": "Fiona 霸体反击", "src": "Vindictus Heavystander_Counter", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Heavystander_Counter.anim", "bone": "RightHand", "speed": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_finish", "zh": "Fiona 终结技", "src": "Vindictus Attack_Finish_Action", "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Finish_Action.anim", "bone": "RightHand", "speed": 1.1, "to": 2.6, "inPlace": true },
+    { "button": "A", "name": "ax_kart_s1", "zh": "Kart 技能 1 的冲步甩斧", "src": "ROE b10 skill_01 0.3–1.1 秒", "clip": "Assets/RoeFighter/Generated/b10/humanoid/b10_skill_01.anim", "bone": "RightHand", "speed": 1.0, "from": 0.3, "to": 1.1, "inPlace": true },
+    { "button": "A", "name": "ax_kart_s3", "zh": "Kart 技能 3 开头的掷斧", "src": "ROE b10 skill_03 0–0.6 秒", "clip": "Assets/RoeFighter/Generated/b10/humanoid/b10_skill_03.anim", "bone": "RightHand", "speed": 1.0, "to": 0.6, "inPlace": true }
+  ]
+}

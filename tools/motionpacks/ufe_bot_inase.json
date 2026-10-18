@@ -1,0 +1,21 @@
+{
+  "name": "ufe_bot_inase",
+  "title": "Mecanim Bot's normals (UFE 2) - Inase's own strikes",
+  "note": "a08's own strikes (user 10-05: \"inase用mecanim bot的动作\", picked from out/a08_ufe_normals.mp4, every standing normal of UFE 2's demo characters on her). Mecanim Bot has six standing normals and the fight four buttons: A light punch (jab), B medium kick (mid front kick), C heavy punch (lunging straight), D heavy kick (roundhouse high kick) - her light kick is left out (its clip is 0.125 s at the move set's speed and its frame count does not fit the clip; it reached 0.39 m on Inase), the medium punch (uppercut) too. Speeds and active frames (\"hit\") as UFE's move set _2DFighter/Mecanim_Bot has them (ufe_normals.json); no knockdown (UFE gives these none). Her stance and walks stay the fight's motion pack's (F3), as in the video she was picked from.",
+  "source": "Universal Fighting Engine 2 v2.7.0a (Asset Store), the demo characters' standing normals and command normals as their move sets have them (_3DFighter/Robot_Kyle, _3DFighter/Ethan_Stance_1, _2DFighter/Mecanim_Bot, _2DFighter/Mike; speeds, levels and launchers from _work/ufe2/ufe_moves.tsv; \"hit\" = the move's active frames as clip seconds: UFE frames are 60 a second after the speed, so frame f is f x speed / 60 s of the clip - Bot's light kick is the one move whose frame count does not fit its clip). Who / zh / ufe / ufeFrames are notes for people and the videos (the importer reads the rest). Mike's light and heavy attacks are the same motion data as Kyle's (README) - only his medium ones are here. Ellen's are 2D sprite animations. Crouching and jumping normals, throws and specials are left out: the fight has no crouch, jump or throw",
+  "license": "Unity Asset Store EULA: personal use only, never committed (Assets/UFE and Generated are gitignored)",
+  "folder": "Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations",
+  "humanoid": false,
+  "strikesOnly": true,
+  "measureOn": "a08",
+  "strikes": [
+    { "button": "A", "name": "ufe_bot_lp", "who": "Mecanim Bot", "zh": "刺拳", "ufe": "Light Punch (Button1)", "level": "Mid", "speed": 1.0, "hit": [0.133, 0.167], "ufeFrames": "10/8/2/0, active 8-9",
+      "clip": "Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations/Moves/light_punch_standing.fbx" },
+    { "button": "B", "name": "ufe_bot_mk", "who": "Mecanim Bot", "zh": "中段前踢", "ufe": "Standing Medium Kick (Button5)", "level": "Mid", "speed": 0.7, "hit": [0.198, 0.233], "ufeFrames": "25/17/3/5, active 17-19",
+      "clip": "Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations/Moves/medium_kick_standing.fbx" },
+    { "button": "C", "name": "ufe_bot_hp", "who": "Mecanim Bot", "zh": "冲步直拳", "ufe": "Heavy Punch (Button3)", "level": "Mid", "speed": 1.0, "hit": [0.267, 0.367], "ufeFrames": "35/16/6/13, active 16-21",
+      "clip": "Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations/Moves/heavy_punch_standing.fbx" },
+    { "button": "D", "name": "ufe_bot_hk", "who": "Mecanim Bot", "zh": "回旋高踢", "ufe": "Heavy Kick (Button6)", "level": "Mid", "speed": 0.85, "hit": [0.213, 0.269], "ufeFrames": "33/15/4/14, active 15-18",
+      "clip": "Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations/Moves/heavy_kick_standing.fbx" }
+  ]
+}

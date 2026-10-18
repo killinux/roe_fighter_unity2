@@ -1,0 +1,32 @@
+{
+  "id": "eve09",
+  "note": "Eve's Planet Diving Suit (7th) on her nude base (Assets/SB/eve_nude: the EveOriginalProportions mod's body, ripper_tpose's Eve_Nude_Barefoot.blend, SbFighter.BuildBase). The base shares her skeleton but is fuller than the suit, so it is carried onto the suit's bind pose by its bones and drawn under each opaque piece only once that piece is off (RoeNudeBody pose / reveal). The outfit is one mesh: suit, two metals, the see-through wing plates and the lace are told apart by material. Stage 1: the wing plates, the gears on her back and the forearm guards. Stage 2: the neck piece with its tie, and the lace. Stage 3: the gauntlets and the metal plates. Stage 4: the suit. Stays on: the boot soles. The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "Eve_Body_Mesh_01", "submesh": 0 },
+    { "renderer": "Eve_Body_Mesh_01", "submesh": 1 },
+    { "renderer": "Eve_Body_Mesh_01", "submesh": 2 },
+    { "renderer": "Eve_Body_Mesh_01", "submesh": 4 },
+    { "renderer": "Eve_Body_Mesh_01", "submesh": 5 }
+  ],
+  "nude": {
+    "prefab": "Assets/SB/eve_nude/eve_nude.fbx",
+    "renderer": "Eve_Body_Mesh_01",
+    "submesh": 0,
+    "material": "Assets/SB/eve_nude/materials/SkinEve.mat",
+    "attachTo": "Eve_Body_Mesh_01",
+    "replace": [ { "renderer": "Eve_Body_Mesh_01", "submesh": 3 } ],
+    "pose": "bones",
+    "reveal": true
+  },
+  "groups": [
+    { "name": "wing plates", "title": "翼片", "stage": 1, "cloth": true, "together": true, "material": "MA_Plastic" },
+    { "name": "gears", "title": "背后齿轮", "stage": 1, "together": true, "bone": "^Ab_09Gear" },
+    { "name": "forearm guards", "title": "前臂护甲", "stage": 1, "bone": "^Ab_Acc_Forearm" },
+    { "name": "neck piece", "title": "领饰和领带", "stage": 2, "cloth": true, "together": true, "bone": "^Ab_NeckAcc" },
+    { "name": "lace", "title": "蕾丝", "stage": 2, "cloth": true, "together": true, "material": "lace" },
+    { "name": "boot soles", "title": "鞋底", "stage": 0, "material": "Metal", "bone": "(Foot|Toe0)" },
+    { "name": "gauntlets", "title": "手甲", "stage": 3, "material": "Metal", "bone": "^(Bip001 [LR] (Hand|Finger)|Ab-[LR]-Forearm)" },
+    { "name": "metal plates", "title": "金属护甲", "stage": 3, "together": true, "material": "Metal" },
+    { "name": "suit", "title": "紧身衣", "stage": 4, "cloth": true, "together": true, "material": "Suit" }
+  ]
+}

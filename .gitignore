@@ -1,0 +1,44 @@
+# Unity
+/Library/
+/Temp/
+/Logs/
+/UserSettings/
+/obj/
+/Build/
+/Builds/
+*.csproj
+*.sln
+*.user
+
+# Game assets extracted from Rise of Eros (commercial game: personal use only, never committed)
+/Assets/ROE/
+/Assets/ROE.meta
+# ... and from Dead or Alive 6 / Dead or Alive 5 Last Round (Koei Tecmo: the same rule)
+/Assets/DOA/
+/Assets/DOA.meta
+# ... and from Vindictus: Defying Fate (Nexon: the same rule)
+/Assets/VDF/
+/Assets/VDF.meta
+# ... and from Stellar Blade (Shift Up / Sony: the same rule)
+/Assets/SB/
+/Assets/SB.meta
+# Prefabs and data generated from those assets
+/Assets/RoeFighter/Generated/
+/Assets/RoeFighter/Generated.meta
+# Fight scenes: copies of the game's stage scenes with the fighters added (RoeFightScene.Build)
+/Assets/RoeFighter/Scenes/
+/Assets/RoeFighter/Scenes.meta
+# Paid Asset Store packages
+/Assets/UFE/
+/Assets/UFE.meta
+/Assets/UFE*/
+/Assets/MagicaCloth2/
+/Assets/MagicaCloth2.meta
+
+# Working files: staged bundles, AssetRipper output, logs, renders
+/_work/
+/out/
+
+# Python
+__pycache__/
+*.pyc

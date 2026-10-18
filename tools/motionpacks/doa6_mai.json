@@ -1,0 +1,129 @@
+{
+ "name": "doa6_mai",
+ "title": "Mai Shiranui (DOA6)",
+ "note": "g04's own strikes (user 10-03: Luffee strikes like Mai Shiranui). The BVH come from Dead or Alive 6's RRPreview.rdb: ripper_tpose scripts/doa6/g2a_bvh.py --g1m <MAI_COS_004.g1m> --out _work/mocap/doa6_mai <MAI00000_MAI.g1a and the clips>. Clips picked from out/motion_sheets/doa6_mai_candidates (RoeMotionPacks.Sheet): A 01000 lunging jab, B 01110 mid elbow, C 01002 lunging straight, D 01040 high kick. inPlace: DOA's strikes step in 0.6-0.7 m - the step is taken out of the clip and the fight moves her along. Her stance too (user 10-03: \"把不知火舞的架势也给 Luffee 当站架\"): 00000 is the guard of g04 / g05 (FighterRig.strikePack roles replace the pack's). Every strike starts with the hips turned as the jab starts (face stance:mai_jab), as does the stance, so going from the stance into a strike and back does not twist her. 10-05 (user: \"把不知火舞也加入进角色来\"): she is a fighter herself (tools/doa/mai.json) - her game clips are segments here too: the shared CMN hurt / knockdown / lying clips Kasumi uses (00130, 00081, 00102), her entrances 07010_ENT (travels 4 m, 3.5 m off when the fight starts - not used) and 07110_ENT, her win 07020_WIN, and three specials (01004 flip and lunge, 01370 somersault in the air, 02002 as her super - only its last charge, from frame 196 (1.6 s): the whole 4.9 s combo backs off 1.5 m, stands, then charges 4.5 m, and with its straight-line travel taken out (in place) her body stood 3-3.75 m behind her place for 4 s, out of the picture), converted onto her skeleton by g2a_bvh.py.",
+ "strikesOnly": true,
+ "measureOn": "g04",
+ "source": "Dead or Alive 6 (Koei Tecmo): Mai Shiranui's moves, decoded by ripper_tpose scripts/doa6 (g2a.py, g2a_bvh.py)",
+ "license": "game data - personal use only, never committed or shared",
+ "roles": {
+  "guard": "mai_stance"
+ },
+ "bvh": {
+  "folder": "_work/mocap/doa6_mai",
+  "reference": "MAI00000_MAI.bvh",
+  "restFrame": -1,
+  "scale": 0.01,
+  "segments": [
+   {
+    "name": "mai_jab",
+    "file": "MAI01000_MAI.bvh",
+    "limb": "auto"
+   },
+   {
+    "name": "mai_elbow",
+    "file": "MAI01110_MAI.bvh",
+    "limb": "auto",
+    "face": "stance:mai_jab"
+   },
+   {
+    "name": "mai_lunge",
+    "file": "MAI01002_MAI.bvh",
+    "limb": "auto",
+    "face": "stance:mai_jab"
+   },
+   {
+    "name": "mai_high_kick",
+    "file": "MAI01040_MAI.bvh",
+    "limb": "auto",
+    "face": "stance:mai_jab"
+   },
+   {
+    "name": "mai_stance",
+    "file": "MAI00000_MAI.bvh",
+    "loop": true,
+    "minCycle": 0.6,
+    "maxCycle": 1.4,
+    "face": "stance:mai_jab"
+   },
+   {
+    "name": "cmn_00130",
+    "file": "CMN00130_CMN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00081",
+    "file": "CMN00081_CMN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "cmn_00102",
+    "file": "CMN00102_CMN.bvh",
+    "loop": true,
+    "minCycle": 0.2,
+    "maxCycle": 0.42,
+    "face": "0"
+   },
+   {
+    "name": "mai_07010_ent",
+    "file": "MAI07010_ENT.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_07110_ent",
+    "file": "MAI07110_ENT.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_07020_win",
+    "file": "MAI07020_WIN.bvh",
+    "face": "0"
+   },
+   {
+    "name": "mai_01004",
+    "file": "MAI01004_MAI.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "mai_01370",
+    "file": "MAI01370_MAI.bvh",
+    "limb": "auto",
+    "face": "0"
+   },
+   {
+    "name": "mai_02002",
+    "file": "MAI02002_MAI.bvh",
+    "limb": "auto",
+    "face": "0",
+    "from": 196
+   }
+  ]
+ },
+ "strikes": [
+  {
+   "button": "A",
+   "name": "mai_jab",
+   "clip": "mai_jab",
+   "inPlace": true
+  },
+  {
+   "button": "B",
+   "name": "mai_elbow",
+   "clip": "mai_elbow",
+   "inPlace": true
+  },
+  {
+   "button": "C",
+   "name": "mai_lunge",
+   "clip": "mai_lunge",
+   "inPlace": true
+  },
+  {
+   "button": "D",
+   "name": "mai_high_kick",
+   "clip": "mai_high_kick",
+   "inPlace": true
+  }
+ ]
+}

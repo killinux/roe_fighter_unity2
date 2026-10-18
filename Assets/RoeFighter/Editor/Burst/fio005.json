@@ -1,0 +1,32 @@
+{
+  "id": "fio005",
+  "note": "Fiona's White Feather (Vindictus PCF_005) on her nude base (Assets/VDF/fio_nude: the game's own base body SM_Fiona_Body01 fitted onto PCF_005's skin by tools/vdf_nude.py, VdfFighter.BuildBase), which replaces PCF_005's skin (upper body, legs, hands, the feet in the shoes) as a whole; its body and its hands and feet are two textures. Every piece of the outfit is cut out by its alpha, so what hides the body is read per triangle (RoeNudeBody.SolidTriangles): the body is drawn under a solid piece only once that piece is off (reveal). Submeshes by material name. Stage 1: the feather tiara and the feathers on her upper arms. Stage 2: the lace cuffs with the arm bands and the hand chains, and the feathers that make the back of the bodice. Stage 3: the skirt. Stage 4: the bodice. Stays on: the shoes. The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "PCF_005_Onepiece", "material": "^PCF_005_Onepiece2?$" },
+    { "renderer": "PCF_005_Hand", "material": "^PCF_005_Hand$" },
+    { "renderer": "PCF_005_Head", "material": "^PCF_005_Head$" },
+    { "renderer": "PCF_005_Foot", "material": "^MI_PCF_005_Foot$" }
+  ],
+  "nude": {
+    "prefab": "Assets/VDF/fio_nude/fio_nude.fbx",
+    "renderer": "Fiona_Nude_Body",
+    "submeshes": [ 0, 1 ],
+    "materials": [ "Assets/VDF/fio_nude/materials/MI_PCF_Body01.mat", "Assets/VDF/fio_nude/materials/MI_PCF_HandFoot01.mat" ],
+    "attachTo": "PCF_005_Onepiece",
+    "replace": [
+      { "renderer": "PCF_005_Onepiece", "material": "^MI_PCF_(Upper|Lower)01$" },
+      { "renderer": "PCF_005_Hand", "material": "^MI_PCF_Hand01$" },
+      { "renderer": "PCF_005_Foot", "material": "^MI_PCF_Lower01$" }
+    ],
+    "reveal": true
+  },
+  "groups": [
+    { "name": "shoes", "title": "高跟鞋", "stage": 0, "renderer": "PCF_005_Foot" },
+    { "name": "tiara", "title": "羽毛头饰", "stage": 1, "together": true, "renderer": "PCF_005_Head" },
+    { "name": "arm feathers", "title": "臂上羽饰", "stage": 1, "anyBone": "^Outfit005_hand_feather", "anyShare": 0.3 },
+    { "name": "lace cuffs", "title": "蕾丝护腕", "stage": 2, "renderer": "PCF_005_Hand" },
+    { "name": "back feathers", "title": "背后羽饰", "stage": 2, "together": true, "anyBone": "^Outfit005_spine05_feather", "anyShare": 0.3 },
+    { "name": "skirt", "title": "裙子", "stage": 3, "cloth": true, "together": true, "anyBone": "^Outfit005_skirt", "anyShare": 0.3 },
+    { "name": "bodice", "title": "上衣", "stage": 4, "cloth": true, "together": true, "renderer": "PCF_005_Onepiece" }
+  ]
+}

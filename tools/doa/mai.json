@@ -1,0 +1,66 @@
+{
+ "id": "mai",
+ "name": "MAI",
+ "outfit": "Shiranui-ryu (COS_004)",
+ "pack": "doa6_mai",
+ "game": [
+  {
+   "name": "hurt",
+   "clip": "cmn_00130"
+  },
+  {
+   "name": "die",
+   "clip": "cmn_00081"
+  },
+  {
+   "name": "rip",
+   "clip": "cmn_00102"
+  },
+  {
+   "name": "react_02",
+   "clip": "mai_07110_ent"
+  },
+  {
+   "name": "idle_02",
+   "clip": "mai_07020_win"
+  },
+  {
+   "name": "skill_01",
+   "clip": "mai_01004"
+  },
+  {
+   "name": "skill_02",
+   "clip": "mai_01370"
+  },
+  {
+   "name": "skill_03",
+   "clip": "mai_02002"
+  }
+ ],
+ "skills": [
+  {
+   "action": "skill1",
+   "clip": "skill_01",
+   "radius": 0.7
+  },
+  {
+   "action": "skill2",
+   "clip": "skill_02",
+   "radius": 0.7
+  },
+  {
+   "action": "skill3",
+   "clip": "skill_03",
+   "radius": 0.7
+  }
+ ],
+ "tune": [
+  {
+   "chain": "MAI_COS_004 chain 0",
+   "word": 8,
+   "value": 0.0,
+   "why": "her 1.2 m tail (white sash and red ball, on her waist): the game's word 8 is 0.15, which the solver reads as the pull back to the animated pose per 1/60 s (a guess) - that held the tail out like a stick whenever she bent, as with the physics off; in DOA6 it hangs and swings. 0: a free chain with the game's gravity (1.7) and damping (0.97)"
+  }
+ ],
+ "portrait": "mai_07020_win@1.3"
+}

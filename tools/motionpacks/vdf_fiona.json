@@ -1,0 +1,52 @@
+{
+ "name": "vdf_fiona",
+ "title": "Fiona (Vindictus)",
+ "note": "Fiona's own moves from Vindictus: Defying Fate (user 10-04 \"继续\" - her game moves were the next step offered). Her AnimSequences exported by UE Viewer (tools/vdf_anims.py), read onto her own skeleton and turned humanoid by VdfAnims. Stance: battle idle; walk: battle walk (backwards: reversed); run: battle run. Strikes with her longsword (RoeBlade: the blade hits, the tip is measured): A Attack_Strong03 thrust, B Guard_Counter slash, C Attack01 spinning slash, D Attack_Strong04 kick and slash (knocks down) - each cut where the swing ends (the game's clips take 2-3 s back to idle). Her game clips (hurt, knockdown, lying, get-up, intro, win, specials) are in tools/vdf/fio005.json.",
+ "strikesOnly": true,
+ "measureOn": "fio005",
+ "source": "Vindictus: Defying Fate 2024-03 pre-alpha (Nexon): Fiona's AnimSequences, UE Viewer .psa -> VdfAnims",
+ "license": "game data - personal use only, never committed or shared",
+ "folder": "Assets/VDF/fio005/anims",
+ "roles": {
+  "guard": "Assets/VDF/fio005/anims/AS_pc_fiona_battle_idle.anim",
+  "walk": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Loop.anim",
+  "walk_back": "-Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Loop.anim",
+  "run": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Run_Loop.anim"
+ },
+ "strikes": [
+  {
+   "button": "A",
+   "name": "fio_thrust",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong03.anim",
+   "bone": "RightHand",
+   "to": 1.0,
+   "speed": 1.2,
+   "inPlace": true
+  },
+  {
+   "button": "B",
+   "name": "fio_counter",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Counter.anim",
+   "bone": "RightHand",
+   "speed": 1.1,
+   "inPlace": true
+  },
+  {
+   "button": "C",
+   "name": "fio_spin",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack01.anim",
+   "bone": "RightHand",
+   "to": 1.7,
+   "inPlace": true
+  },
+  {
+   "button": "D",
+   "name": "fio_kick_slash",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong04.anim",
+   "bone": "RightHand",
+   "to": 2.0,
+   "inPlace": true,
+   "knockdown": true
+  }
+ ]
+}

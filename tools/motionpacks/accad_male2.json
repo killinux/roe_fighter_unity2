@@ -1,0 +1,31 @@
+{
+  "name": "accad_male2",
+  "title": "ACCAD Male 2 (Open Motion Project, OSU)",
+  "source": "ACCAD motion capture, Male 2 (https://accad.osu.edu/research/motion-lab/mocap-system-and-data), BVH 30 fps, converted by RoeMocap",
+  "license": "CC BY 3.0 - Open Motion Project by ACCAD/The Ohio State University",
+  "walkSpeed": 0.9,
+  "backSpeed": 0.8,
+  "bvh": {
+    "folder": "_work/mocap/accad/male2",
+    "reference": "Male2_A1_Stand.bvh",
+    "restFrame": 0,
+    "scale": 0.01,
+    "segments": [
+      { "name": "jab", "file": "Male2_E2_JabRight.bvh", "from": 14, "to": 50, "limb": "RightHand", "recoverSpeed": 1.5 },
+      { "name": "roundhouse_lead", "file": "Male2_G11_RoundhouseLeadingRight.bvh", "from": 17, "to": 76, "limb": "RightFoot", "recoverSpeed": 2, "face": "stance:jab" },
+      { "name": "cross", "file": "Male2_E3_CrossLeft.bvh", "from": 10, "to": 58, "limb": "LeftHand", "recoverSpeed": 2, "face": "stance:jab" },
+      { "name": "roundhouse", "file": "Male2_G8_RoundhouseLeft.bvh", "from": 0, "to": 57, "limb": "LeftFoot", "recoverSpeed": 1.8, "face": "stance:jab" },
+      { "name": "guard", "file": "Male2_E8_Bounce.bvh", "loop": true, "minCycle": 0.4, "maxCycle": 1.4, "face": "stance:jab" },
+      { "name": "walk", "file": "Male2_E3_Advance.bvh", "from": 10, "to": 165, "loop": true, "minCycle": 0.8, "maxCycle": 1.4, "face": "travel" },
+      { "name": "walk_back", "file": "Male2_E5_Retreat.bvh", "from": 55, "to": 185, "loop": true, "minCycle": 0.8, "maxCycle": 1.6, "face": "back" },
+      { "name": "run", "file": "Male2_C3_Run.bvh", "loop": true, "minCycle": 0.5, "maxCycle": 0.9 }
+    ]
+  },
+  "roles": { "guard": "guard", "walk": "walk", "walk_back": "walk_back", "run": "run" },
+  "strikes": [
+    { "button": "A", "name": "jab", "clip": "jab", "speed": 1.6 },
+    { "button": "B", "name": "roundhouse_lead", "clip": "roundhouse_lead", "speed": 1.5 },
+    { "button": "C", "name": "cross", "clip": "cross", "speed": 1.4 },
+    { "button": "D", "name": "roundhouse", "clip": "roundhouse", "speed": 1.4 }
+  ]
+}

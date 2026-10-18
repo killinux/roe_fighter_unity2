@@ -1,0 +1,89 @@
+{
+ "id": "raven",
+ "note": "Raven's suit (Stellar Blade, Monster/CH_M_NA_53) on her own nude body (Assets/SB/raven_nude: the game's CH_M_NA_53_1 - the whole body her suit hides, on the same skeleton; SbFighter.BuildBase). The suit is one mesh in four materials: Suit01 the white bodysuit with its collar and the front ribbons' white pieces, Suit02 the black gloss - shoulders, sleeves, the tail on her back, the shoes and the many small pieces on her hips and waist, RavensuitVinyl the black vinyl panel down her front, BaseBody the skin of her chest, which the nude body replaces. Stage 1: the vinyl panel, the ribbons front and back (Ab_RV_ACC_*) and the tail (Ab-Bk-SuiteA). Stage 2: the black pieces on her hips and waist. Stage 3: the shoes, the black sleeves and the shoulder pieces. Stage 4: the white bodysuit. The first rule that matches a piece decides.",
+ "outfit": [
+  {
+   "renderer": "CH_M_NA_53.001",
+   "submesh": 0
+  },
+  {
+   "renderer": "CH_M_NA_53.001",
+   "submesh": 2
+  },
+  {
+   "renderer": "CH_M_NA_53.001",
+   "submesh": 3
+  }
+ ],
+ "nude": {
+  "prefab": "Assets/SB/raven_nude/raven_nude.fbx",
+  "renderer": "CH_M_NA_53_1.001",
+  "submesh": 0,
+  "material": "Assets/SB/raven_nude/materials/MI_CH_NPC_Raven_01_BaseBody.mat",
+  "attachTo": "CH_M_NA_53.001",
+  "replace": [
+   {
+    "renderer": "CH_M_NA_53.001",
+    "submesh": 1
+   }
+  ],
+  "pose": "bones",
+  "reveal": true
+ },
+ "groups": [
+  {
+   "name": "vinyl",
+   "title": "胸前的黑色漆皮",
+   "stage": 1,
+   "cloth": true,
+   "together": true,
+   "material": "Vinyl"
+  },
+  {
+   "name": "ribbons",
+   "title": "前后飘带",
+   "stage": 1,
+   "cloth": true,
+   "together": true,
+   "bone": "^Ab_RV_ACC"
+  },
+  {
+   "name": "tail",
+   "title": "背后的尾摆",
+   "stage": 1,
+   "cloth": true,
+   "together": true,
+   "bone": "^Ab-Bk-SuiteA"
+  },
+  {
+   "name": "shoes",
+   "title": "鞋",
+   "stage": 3,
+   "material": "Suit02",
+   "bone": "(Foot|Toe0)"
+  },
+  {
+   "name": "sleeves",
+   "title": "黑色袖子和肩甲",
+   "stage": 3,
+   "together": true,
+   "material": "Suit02",
+   "bone": "^(Bip001 [LR] (Clavicle|UpperArm|Forearm|Hand|Finger)|Ab-[LR]-(Shoulder|Forearm|UpperArm|Elbow|Deltoid))"
+  },
+  {
+   "name": "black pieces",
+   "title": "腰上的黑色机械件",
+   "stage": 2,
+   "together": true,
+   "material": "Suit02"
+  },
+  {
+   "name": "suit",
+   "title": "白色紧身衣",
+   "stage": 4,
+   "cloth": true,
+   "together": true,
+   "material": "Suit01"
+  }
+ ]
+}

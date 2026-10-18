@@ -1,0 +1,33 @@
+{
+  "id": "a08",
+  "note": "Inase's battle suit on the family's nude body (a01, RoeNudeBody: it replaces the suit's skin, which the game cut away under the armour), so every piece can come off. Stage 1: the skirt round the hips - the two long panels, the hip armour they hang from, the chains, the back flap, the small pieces at the waist. Stage 2: the upper armour - the left shoulder armour with its chain, the collar, the chain round the right upper arm. Stage 3: the limb armour - forearm guards (with the links on the left forearm and the tassel at the left wrist), shin guards, sandals. Stage 4: the bra armour and the crotch guard. Stays on: the crown, the earring, the rings. The bra armour follows the body (followBody: the nude body's weights under it, so a breast spring moves skin and cup together - RoeBodyCheck 10-05). The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "pc_a08_hd_body1", "submesh": 1 },
+    { "renderer": "pc_a08_hd_body2" }
+  ],
+  "nude": {
+    "prefab": "Assets/ROE/a01/chara_bare_pc_a01_nk_tutorial/pc_a01_nk.prefab",
+    "renderer": "pc_a01_nk_body",
+    "submesh": 0,
+    "material": "Assets/ROE/a01/chara_mat_bare_pc_a01_nk_tutorial/pc_a01_nk_body.mat",
+    "attachTo": "pc_a08_hd_body1",
+    "replace": [ { "renderer": "pc_a08_hd_body1", "submesh": 0 } ]
+  },
+  "groups": [
+    { "name": "skirt chains", "title": "裙链", "stage": 1, "anyBone": "^Skirt_Chain" },
+    { "name": "long skirt panels", "title": "长裙片", "stage": 1, "cloth": true, "bone": "^Skirt_[LR]_(0[1-9]|1\\d)$" },
+    { "name": "hip armour", "title": "胯甲", "stage": 1, "bone": "^Skirt_[LR]_00$" },
+    { "name": "back flap", "title": "后腰垂片", "stage": 1, "cloth": true, "together": true, "anyBone": "^Skirt_M" },
+    { "name": "crotch guard", "title": "护裆", "stage": 4, "renderer": "pc_a08_hd_body1", "bone": "^Bip001 Pelvis$" },
+    { "name": "waist pieces", "title": "腰侧细带", "stage": 1, "renderer": "pc_a08_hd_body2", "bone": "^Bip001 (Spine|Pelvis)$" },
+    { "name": "shoulder armour", "title": "肩甲和肩链", "stage": 2, "bone": "^(Scapular|chain_arm)" },
+    { "name": "collar", "title": "项圈", "stage": 2, "together": true, "bone": "^(Bip001 Spine2|Collar|Bip001 [LR] Clavicle)$" },
+    { "name": "arm chain", "title": "右上臂链", "stage": 2, "bone": "^Bip001 R UpperArm$" },
+    { "name": "shin guards", "title": "护胫", "stage": 3, "bone": "CalfTwist" },
+    { "name": "forearm guards", "title": "护手", "stage": 3, "bone": "^Bip001 [LR] (ForeTwist|Forearm|Hand)" },
+    { "name": "wrist tassel", "title": "腕上流苏", "stage": 3, "together": true, "bone": "^(Accessories|Bone02[89])$" },
+    { "name": "sandals", "title": "凉鞋", "stage": 3, "bone": "^Bip001 [LR] (Foot|Toe0)$" },
+    { "name": "bra armour", "title": "胸甲", "stage": 4, "together": true, "followBody": true, "bone": "(^Bip001 Spine1$|Breast)" },
+    { "name": "crown", "title": "头冠", "stage": 0, "bone": "^Bip001 Head$" }
+  ]
+}

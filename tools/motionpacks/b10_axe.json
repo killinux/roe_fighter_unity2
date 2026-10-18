@@ -1,0 +1,22 @@
+{
+  "name": "b10_axe",
+  "title": "Kart: axe strikes",
+  "note": "b10's own strikes with the hatchet in her right hand and the pistols in her thigh holsters, as her game's battle stance has them (user 10-06: \"把ROE中的卡地亚也加入战斗，一个拿斧子和枪的上衣是红色的卡地亚\" - 卡地亚 is Kart, b10, in the fight since 10-03 but boxing with the motion pack's punches, her axe and pistols only in her skills). In her game she never holds the pistols: in her skills she throws the axe and the pistols fly by themselves and shoot - that stays in her skills. Picked from b10_axe_candidates.json (out/b10_axe_candidates.mp4): A the sweep of her own skill_01 (she throws the axe there; here it stays in her hand), B Vindictus' Attack_Strong01 overhead chop, C Attack_Strong02 lunging cut, D Attack04 the axe over the head and down into the ground (knocks down; Inase's C is the same motion). A-C are neither Fiona's nor Inase's. Each kept up to where the swing has settled (\"to\") and hits while the axe sweeps through the front (\"hit\", from RoeMotionPacks.Import -roeTips on b10 with the grip). All Mid by hand (measured at the axe's farthest point A is High and B Low). Her grip: tools/roe/b10_grip.json (RoeWeaponGrip; the pistols vanish with their holsters, burst stage 1). who / src / zh are notes for people and the videos.",
+  "source": "Rise of Eros (b10 skill_01); Vindictus: Defying Fate 2024-03 pre-alpha (Fiona's AnimSequences, Assets/VDF/fio005/anims)",
+  "license": "game data - personal use only, never committed or shared",
+  "folder": "Assets/VDF/fio005/anims",
+  "humanoid": true,
+  "strikesOnly": true,
+  "grip": true,
+  "measureOn": "b10",
+  "strikes": [
+    { "button": "A", "name": "ax_sweep", "who": "Kart", "zh": "横扫", "src": "ROE skill_01 0.3–1.0 秒", "speed": 1.0, "from": 0.3, "to": 1.0, "hit": [0.17, 0.31], "inPlace": true, "level": "Mid",
+      "clip": "Assets/RoeFighter/Generated/b10/humanoid/b10_skill_01.anim", "bone": "RightHand" },
+    { "button": "B", "name": "ax_chop", "who": "Vindictus", "zh": "劈砍", "src": "Fiona 重击 1（Attack_Strong01）", "speed": 1.1, "to": 0.75, "hit": [0.14, 0.30], "inPlace": true, "level": "Mid",
+      "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong01.anim", "bone": "RightHand" },
+    { "button": "C", "name": "ax_lunge", "who": "Vindictus", "zh": "冲步斩", "src": "Fiona 重击 2（Attack_Strong02）", "speed": 1.1, "to": 0.9, "hit": [0.36, 0.48], "inPlace": true, "level": "Mid",
+      "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong02.anim", "bone": "RightHand" },
+    { "button": "D", "name": "ax_slam", "who": "Vindictus", "zh": "举斧砸地", "src": "Fiona 连击 4（Attack04）", "speed": 1.1, "to": 1.05, "hit": [0.48, 0.62], "inPlace": true, "level": "Mid",
+      "knockdown": true, "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack04.anim", "bone": "RightHand" }
+  ]
+}

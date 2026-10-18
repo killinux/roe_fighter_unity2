@@ -1,0 +1,23 @@
+{
+  "id": "g05",
+  "note": "Luf's goddess suit on the family's nude body (g01_fm, the version of g01's body this suit is cut from: gap 0 mm; RoeNudeBody replaces the suit's skin with it), so everything can come off. The neck under the gold collar is the base's head (fill: what the suit's head lacks). Stage 1: the halo - the heart ring behind her head and the two golden laurel branches. Stage 2: the white sash over her shoulders and arms. Stage 3: the gold - bracelets, the laurel band on her left thigh, the ribbon and anklet on her left leg, toe and finger rings. Stage 4: the long white panels from the collar down to her feet. The first rule that matches a piece decides; pieces no rule matches stay on.",
+  "outfit": [
+    { "renderer": "pc_g05_hd_body", "submesh": 1 },
+    { "renderer": "pc_g05_hd_body", "submesh": 3 }
+  ],
+  "nude": {
+    "prefab": "Assets/ROE/g01/chara_bare_pc_g01_fm_nk/pc_g01_fm_nk.prefab",
+    "renderer": "pc_g01_fm_nk_body",
+    "submesh": 0,
+    "material": "Assets/ROE/g01/chara_mat_bare_pc_g01_nk_prelude/pc_g01_nk_body.mat",
+    "attachTo": "pc_g05_hd_body",
+    "replace": [ { "renderer": "pc_g05_hd_body", "submesh": 0 } ],
+    "fill": [ { "submesh": 1, "missingFrom": [ { "renderer": "pc_g05_hd_Head", "submesh": 0 }, { "renderer": "pc_g05_hd_body", "submesh": 2 } ] } ]
+  },
+  "groups": [
+    { "name": "halo", "title": "心形光环和月桂枝", "stage": 1, "together": true, "bone": "^(Headgear|Leaf_[LR])" },
+    { "name": "sash", "title": "肩上的白色披帛", "stage": 2, "cloth": true, "together": true, "bone": "^Riband" },
+    { "name": "gold", "title": "金饰（手镯、腿环、脚链、戒指）", "stage": 3, "bone": "^Bip001 ([LR] (ForeTwist|Thigh|Toe0|Finger|Hand|Foot)|[LR](CalfTwist|ThighTwist))" },
+    { "name": "panels", "title": "白色长裙片", "stage": 4, "cloth": true, "together": true, "bone": "^Bip001 (Spine|Spine1|Spine2|Neck|Pelvis)$" }
+  ]
+}

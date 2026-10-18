@@ -1,0 +1,15 @@
+{
+  "name": "ufe_bot",
+  "title": "UFE 2: Mecanim Bot",
+  "source": "Universal Fighting Engine 2 v2.7.0a (Asset Store), demo character Mecanim Bot of the 2D Fighter demo: Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations (humanoid FBX on femalerobot's avatar); move set _2DFighter/Mecanim_Bot (Button1 Light Punch, Button4 Light Kick x0.4, Button3 Heavy Punch, Button6 Heavy Kick x0.85)",
+  "license": "Unity Asset Store EULA: personal use only, never committed (Assets/UFE is gitignored)",
+  "folder": "Assets/UFE/Demos/Shared_Assets/Characters/Mecanim_Bot/Animations",
+  "humanoid": false,
+  "roles": { "guard": "idle.fbx:idle", "walk": "move_forward.fbx:moveforward", "walk_back": "move_backward.fbx:movebackward" },
+  "strikes": [
+    { "button": "A", "name": "bot_light_punch", "clip": "light_punch_standing.fbx:light_punch_standing" },
+    { "button": "B", "name": "bot_light_kick", "clip": "light_kick_standing.fbx:light_kick_standing", "speed": 0.4 },
+    { "button": "C", "name": "bot_heavy_punch", "clip": "heavy_punch_standing.fbx:heavy_punch_standing" },
+    { "button": "D", "name": "bot_heavy_kick", "clip": "heavy_kick_standing.fbx:heavy_kick_standing", "speed": 0.85 }
+  ]
+}

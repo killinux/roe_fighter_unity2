@@ -1,0 +1,94 @@
+{
+ "id": "a08",
+ "clip": "skill_01",
+ "frames": "58-111",
+ "source": "skill_01.json",
+ "grips": [
+  {
+   "bone": "weapon_R_hand",
+   "hand": "Bip001 R Hand",
+   "position": [
+    -0.0666,
+    0.0195,
+    0.0
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "slack": 0.0,
+   "turn": 0.125
+  },
+  {
+   "bone": "Bip001 Prop2",
+   "hand": "Bip001 R Hand",
+   "position": [
+    -0.02826,
+    0.03757,
+    -0.08942
+   ],
+   "rotation": [
+    -0.10148,
+    0.007365,
+    0.762556,
+    -0.638871
+   ],
+   "slack": 0.0414,
+   "turn": 3.112
+  },
+  {
+   "bone": "Dummy_weapon_rotate",
+   "hand": "Bip001 R Hand",
+   "position": [
+    -0.06704,
+    0.01962,
+    0.00022
+   ],
+   "rotation": [
+    -0.000147,
+    7e-05,
+    -0.000387,
+    -1.0
+   ],
+   "slack": 0.0126,
+   "turn": 1.373
+  },
+  {
+   "bone": "Point007_L",
+   "hand": "Bip001 R Hand",
+   "position": [
+    -0.25238,
+    -0.12451,
+    1.25094
+   ],
+   "rotation": [
+    0.086946,
+    0.991009,
+    0.066785,
+    0.07669
+   ],
+   "slack": 0.076,
+   "turn": 3.081
+  },
+  {
+   "bone": "Point007_R",
+   "hand": "Bip001 R Hand",
+   "position": [
+    -0.25238,
+    -0.12451,
+    1.25094
+   ],
+   "rotation": [
+    -0.101429,
+    0.00709,
+    0.762217,
+    -0.639286
+   ],
+   "slack": 0.076,
+   "turn": 3.081,
+   "with": "Point007_L"
+  }
+ ]
+}

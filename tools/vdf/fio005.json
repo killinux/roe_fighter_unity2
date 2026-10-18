@@ -1,0 +1,63 @@
+{
+ "id": "fio005",
+ "name": "FIONA",
+ "outfit": "White Feather",
+ "source": "Vindictus",
+ "pack": "vdf_fiona",
+ "stance": "",
+ "game": [
+  {
+   "name": "hurt",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Damage_Light_Front.anim"
+  },
+  {
+   "name": "die",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Damage_Strong_Front_Begin.anim"
+  },
+  {
+   "name": "rip",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Damage_Strong_Front_During.anim"
+  },
+  {
+   "name": "getup",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Damage_Strong_Front_End.anim"
+  },
+  {
+   "name": "react_02",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Rest2battle_Idle.anim"
+  },
+  {
+   "name": "idle_02",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Test_Emo_Cheering_Evy.anim"
+  },
+  {
+   "name": "skill_01",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Battle_ActiveSkill01.anim"
+  },
+  {
+   "name": "skill_02",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Battle_ActiveSkill03.anim"
+  },
+  {
+   "name": "skill_03",
+   "clip": "Assets/VDF/fio005/anims/inplace/AS_PC_Fiona_Battle_Attack_Finish_Action.anim"
+  }
+ ],
+ "skills": [
+  {
+   "action": "skill1",
+   "clip": "skill_01",
+   "radius": 0.9
+  },
+  {
+   "action": "skill2",
+   "clip": "skill_02",
+   "radius": 0.9
+  },
+  {
+   "action": "skill3",
+   "clip": "skill_03",
+   "radius": 0.9
+  }
+ ]
+}

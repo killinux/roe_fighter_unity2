@@ -1,0 +1,67 @@
+{
+ "id": "kas",
+ "name": "KASUMI",
+ "outfit": "Kunoichi",
+ "pack": "doa6_kas",
+ "game": [
+  {
+   "name": "hurt",
+   "clip": "cmn_00130"
+  },
+  {
+   "name": "die",
+   "clip": "cmn_00081"
+  },
+  {
+   "name": "rip",
+   "clip": "cmn_00102"
+  },
+  {
+   "name": "react_02",
+   "clip": "kas_07010_ent"
+  },
+  {
+   "name": "idle_02",
+   "clip": "kas_07020_win"
+  },
+  {
+   "name": "skill_01",
+   "clip": "kas_00081"
+  },
+  {
+   "name": "skill_02",
+   "clip": "kas_00073"
+  },
+  {
+   "name": "skill_03",
+   "clip": "kas_01120"
+  }
+ ],
+ "skills": [
+  {
+   "action": "skill1",
+   "clip": "skill_01",
+   "hits": [
+    0.267
+   ],
+   "radius": 0.7
+  },
+  {
+   "action": "skill2",
+   "clip": "skill_02",
+   "hits": [
+    0.267,
+    0.333
+   ],
+   "radius": 0.7
+  },
+  {
+   "action": "skill3",
+   "clip": "skill_03",
+   "hits": [
+    0.633
+   ],
+   "radius": 0.6
+  }
+ ]
+}

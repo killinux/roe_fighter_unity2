@@ -1,0 +1,17 @@
+{
+  "name": "ufe_mike",
+  "title": "UFE 2: Mike (the same moves as Robot Kyle: kept for its clips, not on F3)",
+  "source": "Universal Fighting Engine 2 v2.7.0a (Asset Store), demo character Mike of the 2D Fighter demo: Assets/UFE/Demos/Shared_Assets/Characters/Mike/Animations (Legacy clips on Mike.FBX's 3ds Max Biped, converted to humanoid on Mike's own avatar); move set _2DFighter/Mike (Button1 Light Punch x1.4, Button4 Light Kick x1.4, Button3 Heavy Punch, Button6 Heavy Kick x0.85)",
+  "license": "Unity Asset Store EULA: personal use only, never committed (Assets/UFE is gitignored)",
+  "folder": "Assets/UFE/Demos/Shared_Assets/Characters/Mike/Animations",
+  "rig": "Assets/UFE/Demos/Shared_Assets/Characters/Mike/Model/Mike.FBX",
+  "humanoid": false,
+  "strikesOnly": true,
+  "roles": { "guard": "idle_standing", "walk": "move_forward", "walk_back": "-move_forward" },
+  "strikes": [
+    { "button": "A", "name": "mike_light_punch", "clip": "punch_light", "speed": 1.4 },
+    { "button": "B", "name": "mike_light_kick", "clip": "kick_light", "speed": 1.4 },
+    { "button": "C", "name": "mike_heavy_punch", "clip": "punch_heavy", "speed": 1.0 },
+    { "button": "D", "name": "mike_heavy_kick", "clip": "kick_heavy", "speed": 0.85 }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+ "name": "vdf_candidates",
+ "title": "Fiona's own Vindictus clips (to pick from)",
+ "source": "Vindictus: Defying Fate 2024-03 pre-alpha (Nexon): Fiona's AnimSequences, UE Viewer .psa -> VdfAnims",
+ "license": "game data - personal use only, never committed or shared",
+ "folder": "Assets/VDF/fio005/anims",
+ "humanoid": true,
+ "strikesOnly": true,
+ "measureOn": "fio005",
+ "strikes": [
+  {
+   "button": "A",
+   "name": "v_guard",
+   "clip": "Assets/VDF/fio005/anims/AS_pc_fiona_battle_idle.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_walk",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Walk_Loop.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_run",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Run_Loop.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_a1",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack01.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_a2",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack02.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_a3",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack03.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_a4",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack04.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_s1",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong01.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_s1b",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong01b.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_s2",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong02.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_s2b",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong02b.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_s3",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong03.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_s3b",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong03b.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_s4",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Strong04.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_sprint_atk",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Sprint_Attack_Strong.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_guard_counter",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Counter.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_hs_counter",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Heavystander_Counter.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_sk1",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill01.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_sk2",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill02.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_sk2b",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill02b.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_sk3",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill03.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_sk3b",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill03b.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_sk4",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_ActiveSkill04.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_finish",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack_Finish_Action.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_dmg_light",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Damage_Light_Front.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_dmg_mid",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Damage_Middle_Front_Begin.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_dmg_strong_b",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Damage_Strong_Front_Begin.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_dmg_strong_d",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Damage_Strong_Front_During.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_dmg_strong_e",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Damage_Strong_Front_End.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_die_front",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Die_Front.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_die_back",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Die_Back.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_guard_begin",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Begin.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_guard_hit",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Guard_Hit.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_hs_hit",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_HeavyStander_Hit.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_rest2battle",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Rest2battle_Idle.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_cheer_bel",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Test_Emo_Cheering_Bel.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_cheer_delia",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Test_Emo_Cheering_Delia.anim"
+  },
+  {
+   "button": "A",
+   "name": "v_cheer_evy",
+   "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Test_Emo_Cheering_Evy.anim"
+  }
+ ]
+}

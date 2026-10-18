@@ -1,0 +1,22 @@
+{
+  "name": "a08_sword",
+  "title": "Inase: greatsword strikes",
+  "note": "a08's own strikes with her greatsword in her right hand (user 10-06: \"动作有拿巨剑的普通攻击么，给inase拿着长剑的找一些普通攻击，可以看roe中是否有现成的，或者Universal Fighting Engine 2 Source v2.7.0a 里是否有\"). Neither has any: Rise of Eros has no normal attacks (each outfit: stance, three skills, hurt, fall, lie), UFE 2's 3D demo characters are unarmed and its Ellen is a 2D sprite. Picked from the 13 of a08_sword_candidates.json (out/a08_sword_candidates.mp4): three of Vindictus' sword combo (Fiona's game; none of the four Fiona strikes with herself, vdf_fiona.json, so the two do not mirror each other) and the big cut in Inase's own skill_01. A Attack02 a diagonal cut, B Attack03 a low sweep, C Attack04 the sword over the head and down into the ground, D the wheel cut of her skill_01 (knocks down). Each kept up to where the swing has settled (\"to\"; the game's clips take 2-2.7 s back to idle) and hits while the blade's tip sweeps through the front (\"hit\", from RoeMotionPacks.Import -roeTips: the tip ahead of her and fast; measured on a08 with the grip). C and D are Mid by hand (measured at the tip's farthest point the slam ends on the ground - Low - and the wheel high - High; both are blocked standing). Her grip: tools/roe/a08_grip.json (RoeWeaponGrip). who / src / zh are notes for people and the videos.",
+  "source": "Vindictus: Defying Fate 2024-03 pre-alpha (Fiona's AnimSequences, Assets/VDF/fio005/anims); Rise of Eros (a08 skill_01)",
+  "license": "game data - personal use only, never committed or shared",
+  "folder": "Assets/VDF/fio005/anims",
+  "humanoid": true,
+  "strikesOnly": true,
+  "grip": true,
+  "measureOn": "a08",
+  "strikes": [
+    { "button": "A", "name": "sw_slash", "who": "Vindictus", "zh": "斜劈", "src": "Fiona 连击 2（Attack02）", "speed": 1.1, "to": 0.8, "hit": [0.28, 0.43], "inPlace": true,
+      "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack02.anim", "bone": "RightHand" },
+    { "button": "B", "name": "sw_sweep", "who": "Vindictus", "zh": "低位横扫", "src": "Fiona 连击 3（Attack03）", "speed": 1.1, "to": 0.85, "hit": [0.29, 0.40], "inPlace": true,
+      "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack03.anim", "bone": "RightHand" },
+    { "button": "C", "name": "sw_slam", "who": "Vindictus", "zh": "举剑砸地", "src": "Fiona 连击 4（Attack04）", "speed": 1.1, "to": 1.05, "hit": [0.49, 0.62], "inPlace": true, "level": "Mid",
+      "clip": "Assets/VDF/fio005/anims/AS_PC_Fiona_Battle_Attack04.anim", "bone": "RightHand" },
+    { "button": "D", "name": "sw_wheel", "who": "Inase", "zh": "大回旋斩", "src": "ROE skill_01 2.1–3.4 秒", "speed": 1.0, "from": 2.1, "to": 3.4, "hit": [0.60, 0.70], "inPlace": true, "level": "Mid",
+      "knockdown": true, "clip": "Assets/RoeFighter/Generated/a08/humanoid/a08_skill_01.anim", "bone": "RightHand" }
+  ]
+}

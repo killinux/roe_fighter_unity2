@@ -96,6 +96,16 @@ namespace RoeFighter.Fight
         public bool IsPlace => kind == "place";
     }
 
+    /// <summary>For the CPU (Fighter.RangedComing): the next blow an opponent's ranged skill sends her way.</summary>
+    public struct RangedThreat
+    {
+        public string kind;                // throw | shot | place (RangedSkill.kind)
+        public int blow;                   // which blow of the skill
+        public float until;                // seconds until it would land where she stands now (a thrown weapon: until it leaves the hand, 0 in flight)
+        public bool locked;                // place: the spot is fixed
+        public float spot;                 // place: the spot, along the fight axis
+    }
+
     /// <summary>A bullet in flight along the fight line (RangedSkill "shot"), stepped by the fight.</summary>
     public class Projectile
     {

@@ -161,6 +161,44 @@ namespace RoeFighter.EditorTools
             return rig;
         }
 
+        const string LightHit = "Assets/ROE/b01/sfx_battlefield_pc_b01_tutorial/SFX_H_battle_suit_12_skill01_1_hit.ogg";
+        const string HeavyHit = "Assets/ROE/b01/sfx_battlefield_pc_b01_tutorial/SFX_H_battle_suit_12_skill03_1_hit.ogg";
+        const string BlockTick = "Assets/RoeFighter/Generated/sounds/block_tick.wav";
+
+        /// <summary>
+        /// The strikes' sounds (user 10-24, round 2's open list: the Dead or Alive 6, Stellar Blade and Vindictus fighters had
+        /// none - a fight among them was silent): ROE's own skill hits as a kit, as KOF has one set of hit sounds for everyone.
+        /// A fighter without a hit sound of her own gets a light hit ("hit", the short punch of the b01 suit's skill 1) and a
+        /// heavy one ("hit_heavy": knockdowns and blows of FightGame.hitHeavyDamage or more; its skill 3).  Everyone gets the
+        /// block ("block"): tools/strike_sounds.py makes it from the light hit, a dry tick (without that file: the light hit).
+        /// -roeStrikeSounds light=&lt;asset&gt;,heavy=&lt;asset&gt;,block=&lt;asset&gt; picks others.  Returns a note for the log.
+        /// </summary>
+        static string StrikeSounds(IEnumerable<FighterRig> rigs)
+        {
+            var table = Table("-roeStrikeSounds", "");
+            AudioClip Load(string key, string fallback) =>
+                AssetDatabase.LoadAssetAtPath<AudioClip>(table.TryGetValue(key, out var path) ? path : fallback);
+            var light = Load("light", LightHit);
+            var heavy = Load("heavy", HeavyHit);
+            var block = Load("block", BlockTick) ?? light;
+            var kit = new List<string>();
+            foreach (var rig in rigs)
+            {
+                if (light != null && !rig.sounds.Any(s => s.name == "hit"))
+                {
+                    rig.sounds.Add(new FighterRig.NamedSound { name = "hit", clip = light });
+                    if (heavy != null)
+                        rig.sounds.Add(new FighterRig.NamedSound { name = "hit_heavy", clip = heavy });
+                    kit.Add(rig.id);
+                }
+                if (block != null && !rig.sounds.Any(s => s.name == "block"))
+                    rig.sounds.Add(new FighterRig.NamedSound { name = "block", clip = block });
+            }
+            return $"hit kit {(light != null ? light.name : "MISSING " + LightHit)} / {(heavy != null ? heavy.name : "MISSING " + HeavyHit)} for " +
+                   $"{(kit.Count > 0 ? string.Join(" ", kit) : "nobody")}; block {(block != null ? block.name : "none")}" +
+                   (block == light && light != null ? $" (no {BlockTick}: run tools/strike_sounds.py)" : "");
+        }
+
         /// <summary>
         /// A fighter whose bind pose stands her feet as they should stand (FighterRig.bindFeet; Eve's platform shoes): the foot
         /// and toe bones' bind rotations, and planted feet standing as there - against the direction the toes point along the
@@ -232,6 +270,7 @@ namespace RoeFighter.EditorTools
 
             var manifest = RoeManifest.Load();
             var roster = ids.Select(id => DoaFighter.IsDoa(id) ? MakeDoaFighter(id) : MakeFighter(manifest.characters.First(c => c.id == id))).ToArray();
+            Debug.Log("[ROE] strike sounds: " + StrikeSounds(roster));
             int pick1 = Mathf.Max(0, ids.IndexOf(Ids(p1).FirstOrDefault() ?? "")), pick2 = Mathf.Max(0, ids.IndexOf(Ids(p2).FirstOrDefault() ?? ""));
             var rigs = new[] { roster[pick1], roster[pick2] };
             // the ones not in the match wait put away (the select screen brings them out)

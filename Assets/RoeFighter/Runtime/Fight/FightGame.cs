@@ -45,6 +45,23 @@ namespace RoeFighter.Fight
         public string hitLight, hitMedium, hitHeavy, hitBlock;
         public float hitLightScale = 0.35f, hitMediumScale = 0.45f, hitHeavyScale = 0.55f, hitBlockScale = 0.4f;
         public int hitMediumDamage = 55, hitHeavyDamage = 80;
+        /// <summary>
+        /// What fills the power gauge (a stock is Fighter.Stock, three at most), each times meterRate: a strike that lands (its
+        /// Move.meterGain; half when blocked), a skill's blow that lands (meterSkillBlow; half when blocked - the super gives
+        /// none), a throw (meterThrow); for the one on the other end, a blow taken (meterTaken) or blocked (meterGuard).
+        /// teamMeter: in a team battle her gauge goes on to the next member of her team, as in KOF.  User 10-24 (round 2's open
+        /// list): a CPU round used to fill about one stock; meterRate 1.6 and the block's share make it about two.
+        /// ROEFighter2.exe -roeMeter 2 sets the rate.
+        /// </summary>
+        public float meterRate = 1.6f;
+        public float meterSkillBlow = 4f, meterThrow = 8f, meterTaken = 3f, meterGuard = 2f;
+        public bool teamMeter = true;
+
+        public void AddMeter(Fighter who, float amount)
+        {
+            if (who != null && amount > 0f)
+                who.meter = Mathf.Min(Fighter.MeterMax, who.meter + amount * meterRate);
+        }
         public Vector3 centre;
         public Vector3 axis = Vector3.right;         // the fight line: fighter 1 stands at -, fighter 2 at +; screen right from the camera's side
         public Vector3 normal;                       // from the fight line towards the camera (zero: worked out from the axis)
@@ -173,6 +190,9 @@ namespace RoeFighter.Fight
                 RoeBoneCloth.SwingFromArg(Arg("-roeSkirtSwing"));
             if (Arg("-roeTeam") != null && int.TryParse(Arg("-roeTeam"), out int size))
                 teamSize = Mathf.Clamp(size, 1, 5);
+            if (Arg("-roeMeter") != null && float.TryParse(Arg("-roeMeter"), System.Globalization.NumberStyles.Float,
+                                                           System.Globalization.CultureInfo.InvariantCulture, out float rate))
+                meterRate = Mathf.Max(0f, rate);
             PickIds(Arg("-roeP1"), Arg("-roeP2"));
             if (Arg("-roeSelect") != null)
                 selectFirst = Arg("-roeSelect") != "0";
@@ -900,7 +920,8 @@ namespace RoeFighter.Fight
                     vic.BlockHit(m.blockstun, m.push * 0.5f, vic.downHeld > 0);
                     if (vic.atWall)
                         atk.PushBack(m.push * 0.5f);
-                    atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + m.meterGain * 0.5f);
+                    AddMeter(atk, m.meterGain * 0.5f);
+                    AddMeter(vic, meterGuard);
                     PlaySound(vic, "block", 0.8f);
                     StrikeSpark(p.Value, m, true);
                     hitStop = 0.05f;
@@ -914,9 +935,10 @@ namespace RoeFighter.Fight
                         BurstClothes(vic, vic.lastHitDir);
                     if (vic.atWall && !vic.Airborne)
                         atk.PushBack(m.push * 0.6f);
-                    atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + m.meterGain);
+                    AddMeter(atk, m.meterGain);
                     atk.comboHits++;
-                    PlaySound(atk, m.hitSound, 1f);
+                    // a heavy blow sounds heavier where she has a sound for it (the strike kit: RoeFightScene.StrikeSounds)
+                    PlaySound(atk, heavy && atk.rig.HasSound("hit_heavy") ? "hit_heavy" : m.hitSound, 1f);
                     StrikeSpark(p.Value, m, false);
                     hitStop = heavy ? 0.1f : 0.07f;
                     Shake(heavy ? 0.6f : 0.3f, 0.2f);
@@ -939,7 +961,7 @@ namespace RoeFighter.Fight
             }
             vic.Tossed(damage);
             BurstClothes(vic, vic.lastHitDir);      // thrown: a stage of her outfit comes off
-            atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + 8f);
+            AddMeter(atk, meterThrow);
             atk.comboHits++;
             PlaySound(atk, "hit", 1f);
             Shake(0.5f, 0.2f);
@@ -1278,19 +1300,23 @@ namespace RoeFighter.Fight
                 return;
             // (a bullet still in flight when the skill is over holds her only briefly)
             float hold = atk.special == s ? atk.SpecialRemaining + 0.15f : 0.4f;
+            bool super = s.meterCost > 0f;
             if (atk.specialOutcome == 2)
             {
                 vic.hp = Mathf.Max(1, vic.hp - Mathf.RoundToInt(damage * 0.1f));
                 vic.BlockHit(last ? 0.3f : hold, 0.07f, vic.downHeld > 0);
+                AddMeter(atk, super ? 0f : meterSkillBlow * 0.5f);
+                AddMeter(vic, meterGuard);
+                PlaySound(vic, "block", 0.8f);
                 hitStop = 0.04f;
                 return;
             }
-            bool knockdown = last && s.meterCost > 0f;
+            bool knockdown = last && super;
             if (vic.Airborne)
                 vic.TakeHit(damage, last ? 0.6f : hold, 0.05f, false);
             else
                 vic.TakeHit(damage, last ? 0.6f : hold, last ? 0.3f : 0.05f, knockdown);
-            atk.meter = Mathf.Min(Fighter.MeterMax, atk.meter + (s.meterCost > 0f ? 0f : 4f));
+            AddMeter(atk, super ? 0f : meterSkillBlow);
             atk.comboHits++;
             hitStop = last ? 0.12f : 0.04f;
             // the super's finishing blow takes the next stage of her outfit off
@@ -1555,10 +1581,13 @@ namespace RoeFighter.Fight
             {
                 if (fresh[i])
                 {
+                    // the team's gauge goes on to the next member (KOF)
+                    float gauge = teamMeter && f[i] != null ? f[i].meter : 0f;
                     pick[i] = team[i][current[i]];
                     ApplyPicks();
                     PrepareSide(i);
                     f[i].Revive();
+                    f[i].meter = gauge;
                 }
                 else
                     f[i].hp = Mathf.Min(f[i].maxHp, f[i].hp + Mathf.RoundToInt(f[i].maxHp * (0.08f + 0.12f * timer / roundSeconds)));

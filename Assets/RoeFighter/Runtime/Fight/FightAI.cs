@@ -6,12 +6,14 @@ namespace RoeFighter.Fight
     /// <summary>
     /// A simple CPU opponent for the side-view fight.  It thinks every 0.1-0.25 s (a human-like reaction
     /// time), keeps to striking range, blocks (crouching against lows) or rolls or hops away from strikes
-    /// it sees coming, jumps over or blocks what is thrown or shot at it, answers a jump-in with a standing
-    /// heavy, mixes standing and crouching strikes by distance, throws up close, jumps in or runs in from
-    /// afar, fires its ranged skills from a distance and uses its specials now and then; a strike that
-    /// connects it may cancel into a special, a skill that lands into the super; with stocks it goes MAX
-    /// now and then and may guard-cancel out of a block.  Longer actions (a run, a jump-in) are small
-    /// plans played out step by step.  Answers in screen terms like a player's pad.
+    /// it sees coming, answers a jump-in with a standing heavy, mixes standing and crouching strikes by
+    /// distance, throws up close, jumps in or runs in from afar, fires its ranged skills from a distance
+    /// and uses its specials now and then; a strike that connects it may cancel into a special, a skill
+    /// that lands into the super; with stocks it goes MAX now and then and may guard-cancel out of a block.
+    /// The opponent's ranged skills it answers blow by blow at the moment that works (AnswerRanged): off the
+    /// spot a blow is aimed at, a roll through a thrown weapon, a block or a super jump against bullets.
+    /// Longer actions (a run, a jump-in) are small plans played out step by step.  Answers in screen terms
+    /// like a player's pad.
     /// </summary>
     public class FightAI
     {
@@ -28,6 +30,10 @@ namespace RoeFighter.Fight
         string button;
         float holdFor;
         bool airPressed, cancelTried, superTried, guardCancelTried;
+        Special answeredSkill;      // the opponent's ranged skill being answered, how far she was into it, its last blow answered
+        float answeredAt;
+        int answeredBlow = -1;
+        bool holdStill;             // ... and whether to stay put until its moment
 
         public FightAI(int seed)
         {
@@ -40,6 +46,107 @@ namespace RoeFighter.Fight
 
         /// <summary>The shortcut of a skill of hers that is ranged (FighterRig.ranged), or null.</summary>
         static string RangedSkill(Fighter me) => me.rig.IsRanged("skill2") ? "S2" : me.rig.IsRanged("skill1") ? "S1" : null;
+
+        static bool CanRoll(Fighter me) => me.rig.Has("roll") || me.rig.Has("dash");
+
+        /// <summary>A back-dash would take her a metre away: her back is not at the edge of the stage, and the two may get that
+        /// much farther apart (FightGame.maxSeparation - from 6 m off one went 0.8 m and the blow found her).</summary>
+        static bool RoomBehind(Fighter me) => !(Mathf.Abs(me.U) > me.game.HalfWidth - 1f && Mathf.Sign(me.U) == -me.FoeSide) &&
+                                              me.Dist + 1f < me.game.maxSeparation;
+
+        void Block(float seconds)
+        {
+            fwd = -1;
+            up = 0;
+            holdFor = seconds;
+        }
+
+        void BackDash()
+        {
+            Plan(2, -1, 0);       // two taps back
+            Plan(2, 0, 0);
+            Plan(3, -1, 0);
+        }
+
+        /// <summary>Down, then up held: a super jump (Fighter.StartJump) - it clears a bullet at chest height for half a second.</summary>
+        void SuperJump()
+        {
+            Plan(2, 0, -1);
+            Plan(8, 0, 1);
+            Plan(30, 0, 0);
+        }
+
+        /// <summary>
+        /// The opponent's ranged skill (Fighter.RangedComing): each blow answered once, at the moment the answer works -
+        ///   place  once the spot is fixed: off it with a back-dash (0.3 s or more to go) or a roll towards her, or a block;
+        ///          one answer for all the skill's blows (they all come down on that spot);
+        ///   throw  as the weapon leaves her hand: a roll through it (she cannot be hit for most of the roll), or a block;
+        ///   shot   a block; now and then a roll timed for the bullet, or a super jump in time (a jump is too low for it).
+        /// Now and then one gets through.  True when it acted this step.
+        /// </summary>
+        bool AnswerRanged(Fighter me, Fighter foe)
+        {
+            if (foe.state != FightState.Special || !(foe.RangedComing is RangedThreat c))
+                return false;
+            // a new use (another skill, or her time in it went back): its blows answered afresh; most of the time she stays put
+            // until then rather than run into it (Inase throws her sword 2.2 s in)
+            if (foe.special != answeredSkill || foe.t < answeredAt)
+            {
+                answeredSkill = foe.special;
+                answeredBlow = -1;
+                holdStill = R() < 0.85f;
+            }
+            answeredAt = foe.t;
+            if (c.blow <= answeredBlow || !(me.Neutral || me.state == FightState.Land))
+                return false;
+            float r;
+            switch (c.kind)
+            {
+                case "place":
+                    if (!c.locked || c.until > 0.55f || c.until < 0.05f)
+                        return false;
+                    answeredBlow = int.MaxValue;
+                    if (Mathf.Abs(me.U - c.spot) > 1.2f)
+                        return false;                 // she is not on the spot
+                    plan.Clear();
+                    r = R();
+                    if (r < 0.4f && c.until >= 0.3f && RoomBehind(me))
+                        BackDash();
+                    else if (r < 0.65f && CanRoll(me))
+                        button = "AB";
+                    else if (r < 0.92f)
+                        Block(c.until + 0.4f);
+                    return true;
+                case "throw":
+                    if (c.until > 0.18f)
+                        return false;
+                    answeredBlow = int.MaxValue;
+                    plan.Clear();
+                    r = R();
+                    if (r < 0.4f && c.until > 0f && CanRoll(me))
+                        button = "AB";
+                    else if (r < 0.9f)
+                        Block(0.9f);
+                    return true;
+                default:
+                    if (c.until > 0.5f)
+                        return false;
+                    answeredBlow = c.blow;
+                    plan.Clear();
+                    r = R();
+                    if (r < 0.15f && c.until >= 0.38f)
+                        SuperJump();
+                    else if (r < 0.27f && CanRoll(me))
+                    {
+                        // the roll when the bullet is a quarter second off: it passes while she cannot be hit
+                        Plan(Mathf.Max(1, Mathf.RoundToInt((c.until - 0.25f) * 60f)), 0, 0);
+                        Plan(1, 0, 0, "AB");
+                    }
+                    else if (r < 0.95f)
+                        Block(c.until + 0.3f);
+                    return true;
+            }
+        }
 
         public FighterInput Decide(Fighter me, float dt, Vector3 camRight)
         {
@@ -58,7 +165,10 @@ namespace RoeFighter.Fight
                 superTried = false;
             if (me.state != FightState.Block)
                 guardCancelTried = false;
-            if (plan.Count > 0)
+            // the opponent's ranged skill first: an answer drops the plan in progress (a run towards her)
+            if (AnswerRanged(me, foe))
+                think = 0.05f;
+            else if (plan.Count > 0)
             {
                 // a plan in progress: its current part
                 var p = plan[0];
@@ -135,21 +245,18 @@ namespace RoeFighter.Fight
                 {
                     if (incoming >= 0f && incoming < 3.5f)
                     {
-                        // something thrown or shot her way: jump over it, block it, or roll through it
-                        float r = R();
-                        if (r < 0.4f)
-                        {
-                            Plan(6, 0, 1);
-                            Plan(30, 0, 0);
-                        }
-                        else if (r < 0.85f)
-                        {
-                            fwd = -1;
-                            up = 0;
-                            holdFor = 0.5f;
-                        }
-                        else if (me.rig.Has("roll") || me.rig.Has("dash"))
+                        // something thrown or shot her way that AnswerRanged left alone: block it or roll through it (a jump
+                        // started now is too late and too low for a bullet, and Inase's greatsword spins as tall as a jump)
+                        if (R() < 0.8f || !CanRoll(me))
+                            Block(0.5f);
+                        else
                             button = "AB";
+                    }
+                    else if (foe.state == FightState.Special && foe.RangedComing != null && holdStill)
+                    {
+                        // her ranged skill is on its way: stay put, AnswerRanged answers it at its moment
+                        fwd = 0;
+                        up = 0;
                     }
                     else if (threatened)
                     {

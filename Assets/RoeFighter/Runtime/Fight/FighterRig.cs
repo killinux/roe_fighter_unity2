@@ -225,6 +225,14 @@ namespace RoeFighter.Fight
 
         /// <summary>Her hand's reach ahead of her root: nothing nearer than this is moved.</summary>
         public const float RemapFrom = 0.9f;
+        /// <summary>
+        /// The game's enemy line is a row of enemies side by side, and a skill that hits them all puts a hit effect on each:
+        /// Amano's super brings up its spikes under four of them, 1.3 m apart across the line.  In the side view there is one
+        /// opponent and an offset across the line is depth: a wall of spikes stood in front of the camera between the two
+        /// (user 10-24, round 2's open list).  An effect anchor out at the enemy line (EnemyLine of the skill's anchorReach or
+        /// farther) keeps this much of its offset across the fight line - the spikes stay on the line, their strip ending at her.
+        /// </summary>
+        public const float EnemyLine = 0.75f, EnemyLineSpread = 0.25f;
         RangedSkill remap;
         float remapWeapon = 1f, remapAnchors = 1f;      // how much the distance beyond RemapFrom is stretched (or shortened)
         Transform remapBone;                             // the thrown weapon's bone (her model)
@@ -279,9 +287,10 @@ namespace RoeFighter.Fight
         /// timeline) wrote this frame - or, when nothing wrote it, what it was before the last move (it never compounds).
         /// </summary>
         /// <param name="ahead">put it this far ahead of her instead (its height and the rest as they are)</param>
-        void RemapOne(Transform t, float k, float? ahead = null)
+        /// <param name="anchor">an effect anchor: out at the enemy line it also comes onto the fight line (EnemyLineSpread)</param>
+        void RemapOne(Transform t, float k, float? ahead = null, bool anchor = false)
         {
-            if (t == null || (Mathf.Abs(k - 1f) < 1e-4f && !ahead.HasValue))
+            if (t == null || (Mathf.Abs(k - 1f) < 1e-4f && !ahead.HasValue && !anchor))
                 return;
             var local = t.localPosition;
             if (!remapState.TryGetValue(t, out var s) || (local - s.set).sqrMagnitude > 1e-10f)
@@ -290,6 +299,8 @@ namespace RoeFighter.Fight
             var v = transform.InverseTransformPoint(t.position);
             if (ahead.HasValue || v.z > RemapFrom)
             {
+                if (anchor && remap != null && remap.anchorReach > RemapFrom && v.z >= EnemyLine * remap.anchorReach)
+                    v.x *= EnemyLineSpread;
                 v.z = ahead ?? RemapFrom + (v.z - RemapFrom) * k;
                 t.position = transform.TransformPoint(v);
             }
@@ -320,7 +331,7 @@ namespace RoeFighter.Fight
             foreach (var g in remapGhost)
                 RemapOne(g, remapWeapon);
             foreach (var a in remapAnchorList)
-                RemapOne(a, remapAnchors);
+                RemapOne(a, remapAnchors, anchor: true);
         }
 
         /// <summary>
@@ -1678,6 +1689,8 @@ namespace RoeFighter.Fight
         public RoeBlade Blade => (blade != null ? blade : blade = animator != null ? animator.GetComponentInChildren<RoeBlade>(true) : null) is RoeBlade b &&
                                  (Grips == null || Grips.grips.Length == 0 || Holds) ? b : null;
         [NonSerialized] RoeBlade blade;
+
+        public bool HasSound(string name) => sounds.Any(x => x.name == name && x.clip != null);
 
         public void Sound(string name, float volume = 1f)
         {

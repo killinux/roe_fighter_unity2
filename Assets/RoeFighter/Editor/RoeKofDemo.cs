@@ -23,8 +23,11 @@ namespace RoeFighter.EditorTools
     ///   system   MAX mode, a strike cancelled into a skill, the super cancel, a MAX super, the two guard cancels, the back
     ///            throw against the forward one.
     ///   moves    each fighter's own jump, crouch, guard (standing and crouching), roll and back dash where her game has them.
+    ///   answers  the CPU against the ranged skills (FightAI.AnswerRanged): Inase's thrown greatsword and swords of light,
+    ///            Kart's axe and pistols, Amano's tentacles, each twice (the CPU picks its answer by chance); the caption
+    ///            says what it did and how it ended.
     ///   -executeMethod RoeFighter.EditorTools.RoeKofDemo.Run -roeDemo ranged [-roeOut _work\demo_ranged] [-roeSize 1280x720]
-    ///   [-roeIds eve09,fio005,kas,mai,raven,a08] (moves)
+    ///   [-roeIds eve09,fio005,kas,mai,raven,a08] (moves) [-roeCpu eve09] (answers: the CPU's fighter)
     /// </summary>
     public static class RoeKofDemo
     {
@@ -71,6 +74,7 @@ namespace RoeFighter.EditorTools
                 case "ranged": Ranged(); break;
                 case "system": SystemDemo(); break;
                 case "moves": Moves(RoeCapture.Arg("-roeIds", "eve09,fio005,kas,mai,raven,a08").Split(',')); break;
+                case "answers": Answers(RoeCapture.Arg("-roeCpu", "eve09")); break;
                 default: throw new Exception("no demo " + demo);
             }
             Caption("");
@@ -124,6 +128,9 @@ namespace RoeFighter.EditorTools
             caption = line;
             captionFrom = shot;
         }
+
+        /// <summary>The current caption's line changed before the next one starts (a line that says how the scene ended).</summary>
+        static void Retitle(string line) => caption = line;
 
         /// <summary>Screen x that walks / holds this fighter towards (+1) or away from (-1) the other.</summary>
         static int Screen(Fighter me, int towards)
@@ -329,6 +336,54 @@ namespace RoeFighter.EditorTools
             Film(0.05f, Press("C", Screen(P1, -1)));
             Settle();
             Note("back throw");
+        }
+
+        static void Answers(string cpuId)
+        {
+            var tries = new[]
+            {
+                ("a08", "S2", 6f, "Inase 扔巨剑"),
+                ("b10", "S1", 5f, "Kart 甩斧头"),
+                ("b10", "S2", 6f, "Kart 双枪"),
+                ("m02", "S3", 5f, "天野超必杀（定点）"),
+                ("a08", "S3", 6f, "Inase 超必杀（定点）"),
+            };
+            int scene = 0;
+            foreach (var (id, key, apart, what) in tries)
+                for (int k = 0; k < 2; k++)
+                {
+                    // another seed each time, far apart (System.Random's first draws for nearby seeds are alike): the CPU picks
+                    // its answer by chance; it stands still until the skill starts
+                    game.seed = 1000 + 7777 * scene++;
+                    game.cpu = new[] { false, false };
+                    string line = $"电脑（{Name(cpuId)}）应对{what}";
+                    Begin(id, cpuId, apart, line);
+                    if (key == "S3")
+                        P1.meter = 100f;
+                    int hpBefore = P2.hp;
+                    var did = new List<string>();
+                    float top = 0f;
+                    game.cpu = new[] { false, true };
+                    Film(0.05f, Press(key));
+                    Film(8f, until: () =>
+                    {
+                        string now = P2.state == FightState.Roll ? "往前翻滚" : P2.state == FightState.BackDash ? "后撤步"
+                                   : P2.state == FightState.Block ? "防住" : P2.state == FightState.Jump ? "跳" : null;
+                        if (now != null && (did.Count == 0 || did[did.Count - 1] != now))
+                            did.Add(now);
+                        top = Mathf.Max(top, P2.H);
+                        return P1.special == null;
+                    });
+                    Film(0.6f);
+                    game.cpu = new[] { false, false };
+                    for (int i = 0; i < did.Count; i++)
+                        if (did[i] == "跳" && top > 1.7f)
+                            did[i] = "大跳";
+                    int lost = hpBefore - P2.hp;
+                    string end = lost <= 0 ? "一下都没挨到" : did.Contains("防住") && lost < 60 ? $"挡住了，只掉 {lost}" : $"被打中，掉了 {lost}";
+                    Retitle($"{line}：{(did.Count > 0 ? string.Join("、", did) : "没反应过来")} → {end}");
+                    Note($"answers {id} {key}: {string.Join(",", did)} (top {top:F2} m), lost {lost}");
+                }
         }
 
         static void Moves(IEnumerable<string> ids)

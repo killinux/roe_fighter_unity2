@@ -827,7 +827,7 @@ namespace RoeFighter.Fight
                             float launchBack = 0f, bool lowHit = false)
         {
             hp = Mathf.Max(0, hp - damage);
-            meter = Mathf.Min(MeterMax, meter + 3f);
+            game.AddMeter(this, game.meterTaken);
             int away = -FoeSide;
             lastHitDir = game.axis * away;
             rig.ShowTimeline(null, 0f);
@@ -1149,6 +1149,45 @@ namespace RoeFighter.Fight
 
         /// <summary>Where her thrown weapon is now (world), when it is in flight.</summary>
         public Vector3? ThrowPoint => ThrowInFlight ? rig.ThrownWeaponPoint(ranged) : null;
+
+        /// <summary>
+        /// For the CPU: the next blow her running ranged skill sends at the opponent - which blow, how long until it would land
+        /// where the opponent stands now (a bullet: until it reaches her, fired or not; a thrown weapon: until it leaves her
+        /// hand, 0 while it flies) and, for a placed skill, the spot once it is fixed; null when nothing more comes.
+        /// </summary>
+        public RangedThreat? RangedComing
+        {
+            get
+            {
+                var r = ranged;
+                if (special == null || r == null || foe == null || specialOutcome == 3)
+                    return null;
+                if (r.IsThrow)
+                    return rangedSpent || rangedImpact ? (RangedThreat?)null
+                        : new RangedThreat { kind = r.kind, until = rangedLocked ? 0f : r.release - t };
+                int next = blowDone.IndexOf(false);
+                if (!r.IsShot)
+                    return next < 0 ? (RangedThreat?)null
+                        : new RangedThreat { kind = r.kind, blow = next, until = specialHits[next] - t, locked = rangedLocked, spot = rangedSpot };
+                // bullets: the nearest one on its way to her, or the next one to be fired
+                RangedThreat? best = null;
+                float speed = Mathf.Max(1f, r.speed);
+                foreach (var p in game.projectiles)
+                    if (!p.dead && p.owner == this && Mathf.Sign(foe.U - p.u) == p.dir)
+                    {
+                        float until = Mathf.Abs(foe.U - p.u) / Mathf.Max(1f, p.speed);
+                        if (best == null || until < best.Value.until)
+                            best = new RangedThreat { kind = r.kind, blow = p.blow, until = until };
+                    }
+                if (next >= 0)
+                {
+                    float until = Mathf.Max(0.05f, specialHits[next] - r.anchorReach / speed) - t + Dist / speed;
+                    if (best == null || until < best.Value.until)
+                        best = new RangedThreat { kind = r.kind, blow = next, until = until };
+                }
+                return best;
+            }
+        }
 
         /// <summary>Her thrown weapon met a bullet or the other's weapon: it lands nothing more (it flies back as the game has it).</summary>
         public void SpendThrow()

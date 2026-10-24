@@ -40,7 +40,19 @@ $unityArgs += $Extra
 
 $t0 = Get-Date
 $p = Start-Process -FilePath $unity -ArgumentList $unityArgs -PassThru
-if (-not $p.WaitForExit($TimeoutMinutes * 60000)) { $p.Kill(); Write-Output "TIMEOUT after $TimeoutMinutes min - killed" }
+# The same endless "Retrying." when the machine is busy (10-24: another window's seven Blender jobs at 100% CPU): the editor
+# starts the IL post processor's runner below normal priority, it never gets the CPU to open its pipe, and the trigger that
+# waits for the pipe gives up and crashes, again and again.  So while the editor runs, its post processor runs at normal
+# priority, like everything else.
+$deadline = $t0.AddMinutes($TimeoutMinutes)
+while (-not $p.WaitForExit(1000)) {
+    if ((Get-Date) -gt $deadline) { $p.Kill(); Write-Output "TIMEOUT after $TimeoutMinutes min - killed"; break }
+    Get-CimInstance Win32_Process -Filter "ParentProcessId=$($p.Id)" -ErrorAction SilentlyContinue | Where-Object { $_.Name -like 'Unity.ILPP.*' } |
+        ForEach-Object {
+            $c = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue
+            if ($c -and $c.PriorityClass -ne 'Normal') { try { $c.PriorityClass = 'Normal' } catch { } }
+        }
+}
 $secs = [int]((Get-Date) - $t0).TotalSeconds
 Write-Output "exit code $($p.ExitCode) after $secs s, log $log"
 

@@ -86,7 +86,7 @@ python tools\make_manual.py --shot fight=_work\fight_kof\frames\01200.jpg --shot
   - 游戏放在远处的特效（时间轴挂在 `VfxAnchor` 下的锚点）也按同样的比例挪到实际打到的地方；打到目标身上的特效（技能表的 target spawn）改成打中那一刻才出。
   - 相撞：两边的子弹、子弹和飞出去的武器、两把武器相撞，一起作废（火花）。子弹和剑相向而飞，一步能接近 1 米，所以除了"现在相距 0.7 米内"，
     "这一步里互相穿过"也算（`FightGame.Meet`）。
-- 电脑：离得远会放远程技能；看到飞来的东西会跳、防或滚。
+- 电脑：离得远会放远程技能；对手的远程技能按种类、看准时机应对（见下面"第二轮收尾"）。
 
 **MAX 模式、取消、防御反击、超级取消、背摔**（`Fighter`）
 
@@ -97,7 +97,7 @@ python tools\make_manual.py --shot fight=_work\fight_kof\frames\01200.jpg --shot
 - 防御反击（保险）：防御硬直中 A+B 翻滚、C+D 吹飞（伤害减半、0.3 秒无敌、往前垫半步，被挡的人就在跟前），各一格。
 - 输入缓冲：命中 / 被挡时的顿帧里按的键记下来，顿帧结束的第一步生效（`FightGame.buffered`）；没有它，取消、超级取消、防御反击这些"打中那一刻按"的操作都会被吞掉。
 - 背摔：后 + C，她转身，对手在 0.3 秒里被带到另一边再摔出去。
-- 电脑：普通攻击打中后偶尔取消接技能 / 超必杀 / MAX，技能打中后 40% 超级取消，防御时有能量 10% 回避、10% 吹飞反击；两格能量时偶尔开 MAX，一格时贴近对手才开（一局通常只攒到一格多：10-18 的电脑对战里六人最多 88–117）。
+- 电脑：普通攻击打中后偶尔取消接技能 / 超必杀 / MAX，技能打中后 40% 超级取消，防御时有能量 10% 回避、10% 吹飞反击；两格能量时偶尔开 MAX，一格时贴近对手才开（10-18 时一局通常只攒到一格多，六人最多 88–117；10-24 能量涨得快了，见"第二轮收尾"）。
 
 **各角色自己的动作**
 
@@ -125,17 +125,76 @@ python E:\code\othercode\ripper_tpose\scripts\doa6\g2a_bvh.py --g1m E:\game_expo
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/doa6_kas.json,tools/motionpacks/doa6_mai.json'
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/sb_eve09.json,tools/motionpacks/sb_eve37.json,tools/motionpacks/sb_eve.json,tools/motionpacks/vdf_fiona.json,tools/motionpacks/sb_raven.json'
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeMotionPacks.Import -Extra '-roeSpec','tools/motionpacks/kof_basics.json'
+python tools\strike_sounds.py                                          # 格挡声（10-24 起；建场景时挂到每个角色身上）
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.Build -Graphics
 # 三段演示（脚本按键，字幕是中文，用 Python 烧进画面）
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeKofDemo.Run -Graphics -Extra '-roeDemo','ranged','-roeOut','_work\demo_ranged'
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeKofDemo.Run -Graphics -Extra '-roeDemo','system','-roeOut','_work\demo_system'
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeKofDemo.Run -Graphics -Extra '-roeDemo','moves','-roeOut','_work\demo_moves'
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeKofDemo.Run -Graphics -Extra '-roeDemo','answers','-roeOut','_work\demo_answers'   # 电脑应对远程技能（10-24）
 python tools\caption_frames.py _work\demo_ranged; python tools\make_video.py _work\demo_ranged out\kof_ranged_demo.mp4
-# （system、moves 同样：out\kof_system_demo.mp4、out\kof_moves_demo.mp4）
+# （system、moves、answers 同样：out\kof_system_demo.mp4、out\kof_moves_demo.mp4、out\kof_answers_demo.mp4）
+# 不录像、只看数字的电脑对战（几分钟）：日志每秒一行两人的体力和能量，最后一行 "fight events"
+.\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.Record -Graphics -Extra '-roeP1','a08,b10,mai','-roeP2','eve_nikke06,m02,kas','-roeSeconds','300','-roeFrames','0','-roeOut','_work\fight_kof_logic2'
 # 电脑对电脑的组队赛：日志最后一行 "fight events" 列出用到的 MAX、取消、防御反击、远程技能的命中 / 打空、相撞
 .\tools\unity_batch.ps1 -Method RoeFighter.EditorTools.RoeFightScene.Record -Graphics -Extra '-roeP1','a08,b10,mai','-roeP2','eve_nikke06,m02,kas','-roeSeconds','300','-roeOut','_work\fight_kof6'
 python tools\make_video.py _work\fight_kof6 out\fight_kof_team_round2.mp4
 ```
+
+### 第二轮收尾：能量、打击音效、天野超必杀的落点、电脑躲远程（10-24）
+
+用户 10-24 说"继续"，做的是 10-18 记下的待办。
+
+**能量槽涨得快一些**（`FightGame.meterRate` 等字段，`AddMeter`）
+
+- 10-18 的电脑对战里一局只攒到一格多（六人最多 88–136），MAX 和超必杀很少见。拳皇里一局一般能攒两格左右。
+- 现在所有来源乘 `meterRate`（默认 1.6）：普通攻击打中 = 招式自己的 `meterGain`（被挡一半），技能每下打中 `meterSkillBlow` 4（被挡一半，超必杀不涨），
+  投技 `meterThrow` 8，挨打 `meterTaken` 3，**新加：挡住对手 `meterGuard` 2**。
+- 组队赛里被打倒的人的能量留给下一个上场的队友（`teamMeter`，拳皇的整队能量槽）；以前新上场的人从零开始。
+- exe 可以用 `-roeMeter 2` 改倍数（1 = 10-18 的涨法）。
+
+**打击音效**（`RoeFightScene.StrikeSounds`，`tools/strike_sounds.py`）
+
+- DOA6、剑星、Vindictus 的角色没有取到原游戏的声音，以前她们之间打起来是哑的（10-18 的 system、moves 演示都没声）。
+- 拳皇是一套打击声大家共用，这里也一样：没有自己打击声的角色，轻的用 ROE b01 套装技能 1 的命中声（0.65 秒，九成八的能量在前 0.15 秒，最干脆的一条），
+  重的（击倒、伤害 80 以上）用同一套技能 3 的命中声（`hit_heavy`）。ROE 角色还是用她自己最短的那条技能命中声。
+- 防御：以前所有人挡住都没声。现在大家共用一声"格挡声"：`tools/strike_sounds.py` 从上面那条轻击声截前 0.14 秒、4 阶高通 1.5 kHz（去掉闷响、留下脆响）、
+  0.1 秒淡出，写到 `Assets/RoeFighter/Generated/sounds/block_tick.wav`（游戏素材做的，不入库）。建场景前跑一次；没有这个文件就拿轻击声代替。
+- 声音挑选是按包络和频谱量出来的（`tools` 外的临时脚本），没有人耳试听；`-roeStrikeSounds light=<资源路径>,heavy=...,block=...` 可以换。
+
+**天野超必杀的尖刺落在对手身上**（`FighterRig.RemapOne` 的 `anchor`，`EnemyLine`、`EnemyLineSpread`）
+
+- 游戏里敌人站成一排，天野的超必杀在四个敌人脚下各冒一丛尖刺（锚点 `skill03_hit_1` 等，左右相隔约 1.3 米，最远的偏 2.8 米）。
+- 横版里只有一个对手，左右偏移变成了前后纵深：最近的一丛离镜头 2.8 米，一大片尖刺墙挡在两人中间的镜头前面。
+- 现在远处的锚点（技能命中线 75% 以外）挪到实际距离时，横向偏移只留 25%：尖刺回到两人之间这条线上，不再挡镜头。
+  尖刺本身是一长条（游戏里就是从她这边往敌人那边一路冒出来），前端长到对手身前，命中特效落在对手身上。
+  近处的（她身边的触手团、两人中间升起的触手）不动。前后对比：`out\kof_ranged_demo_1018.mp4` 和 `out\kof_ranged_demo.mp4` 的 36 秒处。
+  别的远程技能远处的锚点本来就在中线上（偏移 0–0.8 米），基本没变化。
+
+**电脑躲远程技能**（`FightAI.AnswerRanged`，`Fighter.RangedComing`）
+
+- 以前电脑只在东西飞到 3.5 米内时才反应，而且四成是原地跳——子弹在胸口高度，普通跳不够高（只在最高点那 0.17 秒躲得过），巨剑竖着翻滚、跳不过；
+  定点的超必杀它根本不躲。
+- 现在 `Fighter.RangedComing` 告诉电脑：对手这个远程技能下一下还有多久打到自己站的地方（子弹：发射时刻 + 飞行时间；扔武器：还有多久出手；定点：锁定的落点）。
+  电脑每一下只应对一次，挑能成功的时机：
+  - **定点**：锁定后、打下来前 0.55 秒内，人在落点 1.2 米内：后撤步离开（还剩 0.3 秒以上才来得及；背靠场边、或者两人已经离得接近最远 6.8 米时不用——
+    6 米外后撤只退得开 0.8 米，还在落点里）、往前翻滚、或者防住；
+  - **扔武器**：出手前 0.18 秒内往前翻滚（无敌 0.42 秒，盖住武器飞过来那一段），或者防住；
+  - **子弹**：还差 0.5 秒时决定：大多防住；偶尔超级跳（先下后上，离地后 0.24–0.79 秒高过子弹）；偶尔算好时间，等子弹还差 0.25 秒时翻滚穿过去。
+  - 每种都留一成左右反应不过来。应对排在"正在执行的计划"（比如正跑过去）前面，会打断它。飞到眼前还没应对的，就防或者滚，不再原地跳。
+  - 对手一放远程技能，电脑八成五的情况站着等到时机再应对，不往前冲（以前它照常跑过去：Inase 的剑 2.2 秒才出手，它已经跑到跟前，剑在 1 米处扔出来；
+    还有两次它跑过去用技能把对手的超必杀打断了——技能能打中正在放技能的人，普通攻击不能，这条规则没动）。每放一次重新决定一次
+    （同一个技能第二次放，以前会当成"已经应对过"而不理，修了）。
+- 10-24 的两场电脑组队赛（不录像，`-roeFrames 0`）：和 10-18 同样的两队，五局里用掉的能量格从 4 格变成 10 格，MAX、超级取消、防御反击都出现了；
+  天野的超必杀以前两次都打中，这次两次都被防住。另一组（g04,b14,raven 对 fio005,a08,eve09）也是 10 格。两场 0 异常。
+
+**批处理卡在编译**（10-24，`tools/unity_batch.ps1`）
+
+- 和 10-17 一样卡在"Connectivity with IL Post Processor runner cannot be established yet. Retrying."，`Unity.ILPP.Trigger.exe` 每 20 秒左右崩一次（0xc0000409）。
+  这次环境变量里的代理已经去掉了。手动跑一次触发器（`Unity.ILPP.Trigger.exe unity-ilpp-<编号> ping`），它报的是 "Can't find file \\.\pipe\unity-ilpp-..."：
+  后处理器的 Runner 根本没把管道建起来。Runner 进程在，但只有 2 MB、CPU 0——编辑器用"低于正常"的优先级启动它，而机器正被别的窗口的 7 个 Blender 占满（CPU 100%），
+  它一直抢不到 CPU。手动把它调成"正常"，几秒钟管道就有了，编译接着走。
+- 脚本现在等编辑器退出的同时，每秒把编辑器启动的 `Unity.ILPP.*` 子进程调成"正常"优先级。只动这次批处理自己的进程，别的程序不碰。
 
 ### 已知问题 / 待定
 
